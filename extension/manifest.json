@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "Site Blocker",
+  "version": "0.1.0",
+  "permissions": ["storage", "declarativeNetRequest"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "service_worker.js" },
+  "action": { "default_popup": "popup.html" },
+  "options_page": "options.html"
+}
