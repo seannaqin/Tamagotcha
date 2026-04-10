@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Tamagotcha - Options</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 500px;
+      margin: 40px auto;
+      padding: 0 16px;
+    }
+
+    h1 {
+      font-size: 20px;
+    }
+
+    .add-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .add-row input {
+      flex: 1;
+      padding: 6px 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .add-row button {
+      padding: 6px 14px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    #site-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    #site-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #eee;
+      font-size: 14px;
+    }
+
+    #site-list li button {
+      background: none;
+      border: none;
+      color: #c00;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 0 6px;
+    }
+
+    #status-msg {
+      margin-top: 12px;
+      font-size: 13px;
+      color: green;
+      min-height: 18px;
+    }
+
+    #empty-msg {
+      font-size: 13px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <h1>Tamagotcha - Blocked Sites</h1>
+  <p>Sites you add here will be blocked while the extension is active.</p>
+
+  <div class="add-row">
+    <input type="text" id="site-input" placeholder="e.g. twitter.com" />
+    <button id="add-btn">Add Site</button>
+  </div>
+
+  <ul id="site-list"></ul>
+  <p id="empty-msg">No sites blocked yet.</p>
+
+  <!--
+    The options page uses the same logic as the popup.
+    We could share a single JS file for both — but for clarity we keep them separate for now.
+    The options_page in manifest.json points here, and Chrome opens it via right-click > Options.
+  -->
+  <p id="status-msg"></p>
+
+  <script src="popup.js"></script>
+</body>
+</html>

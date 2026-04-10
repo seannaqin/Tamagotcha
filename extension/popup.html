@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Tamagotcha - Block Sites</title>
+  <style>
+    /* Keep the popup a fixed width — Chrome popups don't auto-size well */
+    body {
+      width: 280px;
+      font-family: sans-serif;
+      padding: 12px;
+      margin: 0;
+    }
+
+    h2 {
+      font-size: 16px;
+      margin: 0 0 12px 0;
+    }
+
+    /* The row where the user types a site and clicks Add */
+    .add-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .add-row input {
+      flex: 1;               /* input takes all remaining space */
+      padding: 4px 6px;
+      font-size: 13px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .add-row button {
+      padding: 4px 10px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    /* The list of blocked sites */
+    #site-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    #site-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+      border-bottom: 1px solid #eee;
+      font-size: 13px;
+    }
+
+    /* Small red remove button next to each site */
+    #site-list li button {
+      background: none;
+      border: none;
+      color: #c00;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      padding: 0 4px;
+    }
+
+    #empty-msg {
+      font-size: 12px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <h2>Blocked Sites</h2>
+
+  <!-- Input row: user types a domain and clicks Add -->
+  <div class="add-row">
+    <input type="text" id="site-input" placeholder="e.g. facebook.com" />
+    <button id="add-btn">Add</button>
+  </div>
+
+  <!-- This list is populated by popup.js -->
+  <ul id="site-list"></ul>
+
+  <p id="empty-msg">No sites blocked yet.</p>
+
+  <!--
+    We load popup.js at the bottom of the body.
+    Chrome MV3 does NOT allow inline <script> tags with JS code — only external files.
+    That's why the logic lives in popup.js instead of being written here.
+  -->
+  <script src="popup.js"></script>
+</body>
+</html>
