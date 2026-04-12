@@ -1,0 +1,19 @@
+{
+  "name": "tamagotcha-extension",
+  "version": "1.0.0",
+  "description": "Tamagotcha Chrome Extension with Firebase",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "firebase": "^12.10.0",
+    "firebase-admin": "^13.8.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "typescript": "^5.0.0"
+  }
+}
