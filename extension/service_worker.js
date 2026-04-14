@@ -43,7 +43,10 @@ async function updateBlockingRules(blockedSites) {
       type: "block"          // "block" tells Chrome to cancel the request entirely.
     },
     condition: {
-      urlFilter: site,                    // The URL pattern to match (e.g. "facebook.com")
+      // Wrapping with * on both sides makes this an explicit wildcard substring match.
+      // e.g. "*youtube.com*" matches "https://www.youtube.com/watch?v=..."
+      // Without the wildcards, Chrome can be strict about the pattern format and silently skip it.
+      urlFilter: `*${site}*`,
       resourceTypes: ["main_frame"]       // "main_frame" means top-level page navigations only.
                                           // This prevents blocking images/scripts on other sites
                                           // that happen to load from the blocked domain.

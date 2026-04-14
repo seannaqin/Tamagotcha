@@ -20,7 +20,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // STEP 2: Handle the "Add" button click
   addBtn.addEventListener("click", async () => {
-    const site = input.value.trim().toLowerCase();
+    // Normalize the input so "https://youtube.com/" and "youtube.com" both become "youtube.com"
+    // .replace strips "https://", "http://", and any trailing slashes
+    const site = input.value.trim().toLowerCase()
+      .replace(/^https?:\/\//, "")   // remove protocol
+      .replace(/\/+$/, "");          // remove trailing slashes
 
     // Basic validation — don't add empty strings
     if (!site) return;
