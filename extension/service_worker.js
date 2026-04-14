@@ -37,19 +37,19 @@ async function updateBlockingRules(blockedSites) {
   // Step 2: Build a new rule for each blocked site.
   // Each rule is a plain object that tells Chrome what to block and how.
   const newRules = blockedSites.map((site, index) => ({
-    id: index + 1,           // Rules need a unique numeric ID. We use the array index + 1.
-    priority: 1,             // Priority matters when rules conflict. 1 is fine here.
+    id: index + 1,
+    priority: 1,
     action: {
-      type: "block"          // "block" tells Chrome to cancel the request entirely.
+      // "redirect" sends the user to our blocked.html page instead of silently dropping the request.
+      // This is more reliable than "block" for sites like ChatGPT that are PWAs — they cache
+      // themselves locally, so a silent block gets bypassed by the cached version.
+      // A redirect interrupts the navigation itself, which cache cannot bypass.
+      type: "redirect",
+      redirect: { extensionPath: "/blocked.html" }
     },
     condition: {
-      // Wrapping with * on both sides makes this an explicit wildcard substring match.
-      // e.g. "*youtube.com*" matches "https://www.youtube.com/watch?v=..."
-      // Without the wildcards, Chrome can be strict about the pattern format and silently skip it.
       urlFilter: `*${site}*`,
-      resourceTypes: ["main_frame"]       // "main_frame" means top-level page navigations only.
-                                          // This prevents blocking images/scripts on other sites
-                                          // that happen to load from the blocked domain.
+      resourceTypes: ["main_frame"]
     }
   }));
 
