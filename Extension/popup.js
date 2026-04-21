@@ -1,5 +1,7 @@
-let timeRemaining = 300;
+let totalTime = 300;
+let timeRemaining = totalTime;
 let timerInterval = null;
+let maxTimerInput = 1440; // 1 day in minutes
 
 const startBtn = document.getElementById('startBtn');
 const pauseBtn = document.getElementById('pauseBtn');
@@ -7,6 +9,14 @@ const resetBtn = document.getElementById('resetBtn');
 const setBtn = document.getElementById('setBtn');
 const timerDisplay = document.getElementById('timerDisplay');
 const customTimeInput = document.getElementById('customTime');
+
+// Prevent invalid input (non-numeric, decimals, 'e')
+customTimeInput.addEventListener('input', (e) => {
+  e.target.value = e.target.value.replace(/[^0-9]/g, '');
+  if (parseInt(e.target.value) > maxTimerInput) {
+    e.target.value = '1440';
+  }
+});
 
 startBtn.addEventListener('click', () => {
   if (!timerInterval) {
@@ -24,7 +34,7 @@ pauseBtn.addEventListener('click', () => {
 resetBtn.addEventListener('click', () => {
   clearInterval(timerInterval);
   timerInterval = null;
-  timeRemaining = 300;
+  timeRemaining = totalTime;
   updateDisplay();
   updateButtonStates();
 });
@@ -34,7 +44,8 @@ setBtn.addEventListener('click', () => {
   if (mins > 0) {
     clearInterval(timerInterval);
     timerInterval = null;
-    timeRemaining = mins * 60;
+    totalTime = mins * 60;
+    timeRemaining = totalTime;
     updateDisplay();
     updateButtonStates();
   }
@@ -58,10 +69,16 @@ function tick() {
 }
 
 function updateDisplay() {
-  const mins = Math.floor(timeRemaining / 60);
+  const hours = Math.floor(timeRemaining / 3600);
+  const mins = Math.floor((timeRemaining % 3600) / 60);
   const secs = timeRemaining % 60;
-  timerDisplay.textContent =
-    `${mins}:${secs.toString().padStart(2, '0')}`;
+  if (hours > 0) {
+    timerDisplay.textContent = 
+      `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  } else {
+    timerDisplay.textContent = 
+      `${mins}:${secs.toString().padStart(2, '0')}`;
+  }
 }
 
 function updateButtonStates() {

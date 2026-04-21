@@ -2,14 +2,15 @@
   width: 300px;
   padding: 20px;
   text-align: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-color: #FFF3E4;
+  border: 10px solid #FDE0BC;
   border-radius: 12px;
 }
 
 .timer-display {
   font-size: 48px;
   font-weight: bold;
-  color: white;
+  color: #6D420A;
   margin: 20px 0;
   font-family: 'Courier New', monospace;
   letter-spacing: 2px;
@@ -28,8 +29,8 @@
   border-radius: 6px;
   cursor: pointer;
   font-weight: bold;
-  background: white;
-  color: #667eea;
+  background: #FDE0BC;
+  color: #6D420A;
   transition: 0.3s;
 }
 
@@ -44,10 +45,11 @@
 }
 
 .btn.secondary {
-  background: rgba(255,255,255,0.2);
-  color: white;
+  background: #FFF3E4;
+  color: #6D420A;
   font-size: 12px;
   padding: 8px 16px;
+  border: 3px solid #FDE0BC;
 }
 
 input {
