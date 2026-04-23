@@ -26,7 +26,8 @@ const DEFAULT_STATE = {
   stats: {
     petsKilled: 0,
     longestLifespan: 0,
-    hoursStudied: 0
+    hoursStudied: 0,
+    longestSessionMins: 0
   },
   lastActive: Date.now()
 };
@@ -89,6 +90,10 @@ function startTimer(type, durationMins) {
 
     chrome.storage.local.set({ session: newSession }, () => {
       updateLastActive();
+      // Block any tab already open on a banned site
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach(tab => { if (tab.url) checkTabUrl(tab.id, tab.url); });
+      });
     });
   });
 }
@@ -110,7 +115,11 @@ function stopTimer(manual = false) {
       if (!manual || minutesLived > 5) { // Reward some even if stopped manually after 5 mins
         newStats.hoursStudied += (minutesLived / 60);
 
-        // Reward: log(minutes + 1) * multiplier. 
+        if (Math.floor(minutesLived) > (newStats.longestSessionMins || 0)) {
+          newStats.longestSessionMins = Math.floor(minutesLived);
+        }
+
+        // Reward: log(minutes + 1) * multiplier.
         // We want reward to be smaller than punishment
         let healthGain = Math.log(minutesLived + 1) * 2;
 
@@ -161,8 +170,7 @@ function checkTabUrl(tabId, url) {
       const isBanned = data.settings.bannedSites.some(site => hostname.includes(site));
 
       if (isBanned) {
-        // Redirection to the extension's dashboard to block the banned site
-        chrome.tabs.update(tabId, { url: chrome.runtime.getURL("options.html") });
+        chrome.tabs.update(tabId, { url: chrome.runtime.getURL("blocked.html") });
 
         // Health logic
         const newViolations = data.session.violations + 1;
@@ -193,10 +201,12 @@ function checkActiveTab() {
   });
 }
 
-// Track URL changes to catch them the moment they navigate
+// Catch navigations (URL change) AND refreshes (status = loading on same URL)
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.url) {
     checkTabUrl(tabId, changeInfo.url);
+  } else if (changeInfo.status === 'loading' && tab.url) {
+    checkTabUrl(tabId, tab.url);
   }
 });
 

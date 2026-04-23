@@ -1,110 +1,205 @@
-// popup.js
-// This script runs when the user opens the popup (clicks the extension icon).
-// It handles the UI: showing the blocked sites list, adding, and removing sites.
+let state = null;
+let countdownInterval = null;
 
-// Wait for the HTML to fully load before we try to access any elements
-document.addEventListener("DOMContentLoaded", async () => {
+const timerDisplay  = document.getElementById('timerDisplay');
+const sessionLabel  = document.getElementById('sessionLabel');
+const nextInfo      = document.getElementById('nextInfo');
+const startBtn      = document.getElementById('startBtn');
+const pauseBtn      = document.getElementById('pauseBtn');
+const resetBtn      = document.getElementById('resetBtn');
+const petImage      = document.getElementById('petImage');
+const healthBar     = document.getElementById('healthBar');
+const healthPct     = document.getElementById('healthPct');
+const statAge       = document.getElementById('statAge');
+const statDeceased  = document.getElementById('statDeceased');
+const statLongest   = document.getElementById('statLongest');
+const statHours     = document.getElementById('statHours');
+const statLongestStudy = document.getElementById('statLongestStudy');
+const blockedList   = document.getElementById('blockedList');
+const toggleAddForm = document.getElementById('toggleAddForm');
+const addSiteForm   = document.getElementById('addSiteForm');
+const newSiteInput  = document.getElementById('newSiteInput');
+const confirmAdd    = document.getElementById('confirmAdd');
 
-  // Grab references to the HTML elements we'll be working with
-  const input     = document.getElementById("site-input");
-  const addBtn    = document.getElementById("add-btn");
-  const siteList  = document.getElementById("site-list");
-  const emptyMsg  = document.getElementById("empty-msg");
+// ── Boot ───────────────────────────────────────────────────────────────────
+loadState();
 
-  // STEP 1: Load the current blocked sites from Chrome's storage and render them
-  // chrome.storage.sync saves data tied to the user's Google account,
-  // so blocked sites persist across devices. The { blockedSites: [] } is a
-  // default — if nothing is saved yet, we get back an empty array.
-  const { blockedSites } = await chrome.storage.sync.get({ blockedSites: [] });
-  renderList(blockedSites);
-
-  // STEP 2: Handle the "Add" button click
-  addBtn.addEventListener("click", async () => {
-    // Normalize the input so "https://youtube.com/" and "youtube.com" both become "youtube.com"
-    // .replace strips "https://", "http://", and any trailing slashes
-    const site = input.value.trim().toLowerCase()
-      .replace(/^https?:\/\//, "")   // remove protocol
-      .replace(/\/+$/, "");          // remove trailing slashes
-
-    // Basic validation — don't add empty strings
-    if (!site) return;
-
-    // Load the current list fresh from storage before modifying it
-    const { blockedSites } = await chrome.storage.sync.get({ blockedSites: [] });
-
-    // Don't add duplicates
-    if (blockedSites.includes(site)) {
-      input.value = "";
-      return;
-    }
-
-    // Add the new site to the list
-    const updated = [...blockedSites, site];
-
-    // Save the updated list back to storage
-    await chrome.storage.sync.set({ blockedSites: updated });
-
-    // Tell the service worker to rebuild its blocking rules with the new list
-    await notifyServiceWorker(updated);
-
-    // Clear the input and re-render the list in the popup
-    input.value = "";
-    renderList(updated);
+function loadState() {
+  chrome.runtime.sendMessage({ action: 'getState' }, (result) => {
+    state = result;
+    renderAll();
+    tickCountdown();
   });
+}
 
-  // Also let the user press Enter to add a site instead of clicking the button
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") addBtn.click();
+// ── Render all panels ──────────────────────────────────────────────────────
+function renderAll() {
+  renderStats();
+  renderPet();
+  renderTimerPanel();
+  renderBlockedSites();
+}
+
+function renderStats() {
+  const { pet, stats } = state;
+  const ageDays = Math.floor((Date.now() - pet.birthDate) / 86400000);
+  statAge.textContent       = `${ageDays} day${ageDays !== 1 ? 's' : ''}`;
+  statDeceased.textContent  = stats.petsKilled;
+  statLongest.textContent   = `${stats.longestLifespan} days`;
+  statHours.textContent     = Math.floor(stats.hoursStudied);
+
+  const longestMins = stats.longestSessionMins || 0;
+  statLongestStudy.textContent = formatTime(longestMins * 60);
+}
+
+function renderPet() {
+  const { pet } = state;
+  const pct = Math.max(0, Math.min(100, Math.round(pet.health)));
+  healthBar.style.width = pct + '%';
+  healthPct.textContent = pct + '%';
+
+  if (pet.status === 'dead') {
+    petImage.src = 'assets/pet_dead.png';
+  } else if (pet.status === 'sad') {
+    petImage.src = 'assets/pet_sad.png';
+  } else {
+    petImage.src = 'assets/pet_healthy.png';
+  }
+}
+
+function renderTimerPanel() {
+  const { session, timers } = state;
+  const breakSecs = (timers.break || 5) * 60;
+  nextInfo.textContent = `Next: ${formatTime(breakSecs)} break`;
+
+  if (session.isActive) {
+    sessionLabel.textContent = session.type === 'break' ? 'Break Time' : 'Study Time';
+    startBtn.textContent = 'Stop';
+    startBtn.classList.add('running');
+    pauseBtn.disabled = false;
+    updateCountdownDisplay();
+  } else {
+    sessionLabel.textContent = 'Study Time';
+    startBtn.textContent = 'Start';
+    startBtn.classList.remove('running');
+    pauseBtn.disabled = true;
+    timerDisplay.textContent = formatTime((timers.work || 25) * 60);
+  }
+}
+
+function renderBlockedSites() {
+  const sites = (state.settings && state.settings.bannedSites) || [];
+  blockedList.innerHTML = '';
+  sites.forEach((site, i) => {
+    const li = document.createElement('li');
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'remove-btn';
+    removeBtn.textContent = '−';
+    removeBtn.addEventListener('click', () => removeSite(i));
+
+    li.appendChild(removeBtn);
+    li.insertAdjacentHTML('beforeend',
+      `<span class="site-bullet">•</span><span class="site-name" title="${site}">${site}</span>`
+    );
+    blockedList.appendChild(li);
   });
-  // FUNCTION: renderList
-  // Clears and redraws the <ul> list of blocked sites in the popup.
-  function renderList(sites) {
-    // Clear whatever is currently in the list
-    siteList.innerHTML = "";
+}
 
-    // Show or hide the "No sites blocked yet" message
-    emptyMsg.style.display = sites.length === 0 ? "block" : "none";
+// ── Countdown ──────────────────────────────────────────────────────────────
+function tickCountdown() {
+  clearInterval(countdownInterval);
+  if (!state.session.isActive) return;
 
-    // Create one <li> for each blocked site
-    sites.forEach(site => {
-      const li = document.createElement("li");
+  countdownInterval = setInterval(() => {
+    updateCountdownDisplay();
+  }, 1000);
+}
 
-      // The site name as text
-      const span = document.createElement("span");
-      span.textContent = site;
+function updateCountdownDisplay() {
+  const remaining = Math.max(0, Math.floor((state.session.endTime - Date.now()) / 1000));
+  timerDisplay.textContent = formatTime(remaining);
 
-      // A remove button (×) on the right
-      const removeBtn = document.createElement("button");
-      removeBtn.textContent = "×";
-      removeBtn.title = "Remove";
+  if (remaining <= 0) {
+    clearInterval(countdownInterval);
+    setTimeout(loadState, 1200);
+  }
+}
 
-      // When the remove button is clicked, remove this site
-      removeBtn.addEventListener("click", async () => {
-        const { blockedSites } = await chrome.storage.sync.get({ blockedSites: [] });
+function formatTime(totalSecs) {
+  const m = Math.floor(totalSecs / 60);
+  const s = totalSecs % 60;
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
 
-        // Filter out the site we want to remove
-        const updated = blockedSites.filter(s => s !== site);
-
-        // Save and sync
-        await chrome.storage.sync.set({ blockedSites: updated });
-        await notifyServiceWorker(updated);
-        renderList(updated);
-      });
-
-      li.appendChild(span);
-      li.appendChild(removeBtn);
-      siteList.appendChild(li);
+// ── Timer controls ─────────────────────────────────────────────────────────
+startBtn.addEventListener('click', () => {
+  if (state.session.isActive) {
+    chrome.runtime.sendMessage({ action: 'stopTimer' }, () => {
+      clearInterval(countdownInterval);
+      loadState();
+    });
+  } else {
+    const duration = state.timers.work || 25;
+    chrome.runtime.sendMessage({ action: 'startTimer', type: 'work', duration }, () => {
+      loadState();
     });
   }
-  // FUNCTION: notifyServiceWorker
-  // Sends a message to service_worker.js with the updated list.
-  // The service worker is the one that actually changes the Chrome blocking rules.
-  async function notifyServiceWorker(sites) {
-    // chrome.runtime.sendMessage sends a message to the background service worker
-    await chrome.runtime.sendMessage({
-      type: "UPDATE_BLOCKED_SITES",
-      sites: sites
-    });
-  }
-
 });
+
+pauseBtn.addEventListener('click', () => {
+  chrome.runtime.sendMessage({ action: 'stopTimer' }, () => {
+    clearInterval(countdownInterval);
+    loadState();
+  });
+});
+
+resetBtn.addEventListener('click', () => {
+  if (state.session.isActive) {
+    chrome.runtime.sendMessage({ action: 'stopTimer' }, () => {
+      clearInterval(countdownInterval);
+      loadState();
+    });
+  } else {
+    loadState();
+  }
+});
+
+// ── Blocked sites ──────────────────────────────────────────────────────────
+toggleAddForm.addEventListener('click', () => {
+  const hidden = addSiteForm.classList.toggle('hidden');
+  if (!hidden) newSiteInput.focus();
+});
+
+confirmAdd.addEventListener('click', addSite);
+newSiteInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') addSite();
+  if (e.key === 'Escape') addSiteForm.classList.add('hidden');
+});
+
+function addSite() {
+  const raw = newSiteInput.value.trim().toLowerCase();
+  if (!raw) return;
+  const site = raw.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+  if (!site) return;
+
+  const sites = (state.settings && state.settings.bannedSites) || [];
+  if (sites.includes(site)) {
+    newSiteInput.value = '';
+    addSiteForm.classList.add('hidden');
+    return;
+  }
+
+  state.settings.bannedSites = [...sites, site];
+  chrome.storage.local.set({ settings: state.settings }, () => {
+    newSiteInput.value = '';
+    addSiteForm.classList.add('hidden');
+    renderBlockedSites();
+  });
+}
+
+function removeSite(index) {
+  state.settings.bannedSites = state.settings.bannedSites.filter((_, i) => i !== index);
+  chrome.storage.local.set({ settings: state.settings }, () => {
+    renderBlockedSites();
+  });
+}
