@@ -69,6 +69,12 @@ web_modules/
 .env
 .env.*
 !.env.example
+.env.local
+.env*.local
+
+# Firebase rules/admin keys
+config/firebase-rules.json
+config/service-account.json
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache

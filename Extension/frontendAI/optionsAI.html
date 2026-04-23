@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Focus Pet Dashboard</title>
+  <link rel="stylesheet" href="options.css">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="layout">
+    <nav class="sidebar">
+      <div class="brand">
+        <img src="assets/icon.png" alt="Icon">
+        <h2>Focus Pet</h2>
+      </div>
+      <ul class="nav-links">
+        <li class="active" data-target="dashboard">Dashboard</li>
+        <li data-target="settings">Settings</li>
+      </ul>
+    </nav>
+    <main class="content">
+      <!-- Dashboard Section -->
+      <section id="dashboard" class="tab-content active">
+        <header>
+          <h1>Your Pet's Dashboard</h1>
+          <p class="subtitle">Track your focus and keep your pet alive.</p>
+        </header>
+
+        <div class="stats-grid">
+          <div class="stat-card highlight-danger">
+            <h3>Pets Lost</h3>
+            <p id="stat-pets-killed" class="stat-value">0</p>
+          </div>
+          <div class="stat-card highlight-success">
+            <h3>Max Lifespan</h3>
+            <p id="stat-max-lifespan" class="stat-value">0 days</p>
+          </div>
+          <div class="stat-card highlight-primary">
+            <h3>Hours Focused</h3>
+            <p id="stat-hours-studied" class="stat-value">0</p>
+          </div>
+        </div>
+
+        <div class="pet-showcase">
+          <img id="showcase-pet-img" src="assets/pet_healthy.png" alt="Your Pet">
+          <h2 id="showcase-pet-status">Happy & Healthy</h2>
+          <div class="health-bar-container">
+            <div id="showcase-health-bar" class="health-bar"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings Section -->
+      <section id="settings" class="tab-content">
+        <header>
+          <h1>Settings</h1>
+          <p class="subtitle">Configure timers and distracted websites.</p>
+        </header>
+
+        <div class="settings-grid">
+          <div class="settings-group">
+            <h2>Timers</h2>
+            <div class="input-row">
+              <label>Work Duration (min):</label>
+              <input type="number" id="work-duration" min="1" max="120">
+            </div>
+            <div class="input-row">
+              <label>Break Duration (min):</label>
+              <input type="number" id="break-duration" min="1" max="60">
+            </div>
+            <button id="save-timers-btn" class="btn primary">Save Timers</button>
+            <p id="timer-save-msg" class="success-msg hidden">Saved!</p>
+          </div>
+
+          <div class="settings-group">
+            <h2>Banned Websites</h2>
+            <p class="subtitle">Visiting these during a work session hurts your pet.</p>
+            <div class="add-site-row">
+              <input type="text" id="new-site-input" placeholder="e.g. reddit.com">
+              <button id="add-site-btn" class="btn secondary">Add</button>
+            </div>
+            <ul id="banned-sites-list" class="site-list">
+              <!-- populated by js -->
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="options.js"></script>
+</body>
+
+</html>

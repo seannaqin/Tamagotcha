@@ -1,0 +1,195 @@
+:root {
+  --bg-color: #121212;
+  --surface-color: rgba(255, 255, 255, 0.05);
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
+  --primary-color: #3b82f6;
+  --primary-hover: #2563eb;
+  --secondary-color: #10b981;
+  --secondary-hover: #059669;
+  --danger-color: #ef4444;
+  --danger-hover: #dc2626;
+  --health-good: #10b981;
+  --health-ok: #f59e0b;
+  --health-bad: #ef4444;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Outfit', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  width: 320px;
+  display: flex;
+  justify-content: center;
+}
+
+.container {
+  width: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+h1 {
+  font-size: 1.2rem;
+  margin: 0;
+  font-weight: 800;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+#options-btn {
+  background: var(--surface-color);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-primary);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+#options-btn:hover {
+  background: rgba(255,255,255,0.1);
+  transform: rotate(90deg);
+}
+
+.pet-display {
+  background: var(--surface-color);
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+  position: relative;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.05);
+  margin-bottom: 20px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.status-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255,255,255,0.1);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+#pet-image {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  margin: 10px 0;
+  animation: float 3s ease-in-out infinite;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.health-bar-container {
+  width: 100%;
+  height: 12px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 6px;
+  margin-top: 15px;
+  overflow: hidden;
+}
+
+.health-bar {
+  height: 100%;
+  width: 100%;
+  background: var(--health-good);
+  border-radius: 6px;
+  transition: width 0.5s ease-out, background-color 0.5s ease;
+}
+
+.health-text {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.timer-section {
+  text-align: center;
+}
+
+#timer-display {
+  font-size: 3rem;
+  margin: 0 0 5px 0;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 2px;
+}
+
+#session-info {
+  color: var(--text-secondary);
+  margin: 0 0 20px 0;
+  font-size: 0.9rem;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.controls.hidden {
+  display: none !important;
+}
+
+.btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn.primary {
+  background: var(--primary-color);
+  color: white;
+}
+.btn.primary:hover { background: var(--primary-hover); }
+
+.btn.secondary {
+  background: var(--secondary-color);
+  color: white;
+}
+.btn.secondary:hover { background: var(--secondary-hover); }
+
+.btn.danger {
+  background: transparent;
+  border: 1px solid var(--danger-color);
+  color: var(--danger-color);
+}
+.btn.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
