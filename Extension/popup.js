@@ -7,17 +7,7 @@ let isEditing = false;
 const startBtn = document.getElementById('startBtn');
 const pauseBtn = document.getElementById('pauseBtn');
 const resetBtn = document.getElementById('resetBtn');
-// const setBtn = document.getElementById('setBtn');
 const timerDisplay = document.getElementById('timerDisplay');
-// const customTimeInput = document.getElementById('customTime');
-
-// // Prevent invalid input (non-numeric, decimals, 'e')
-// customTimeInput.addEventListener('input', (e) => {
-//   e.target.value = e.target.value.replace(/[^0-9]/g, '');
-//   if (parseInt(e.target.value) > maxTimerInput) {
-//     e.target.value = '1440';
-//   }
-// });
 
 startBtn.addEventListener('click', () => {
   if (!timerInterval) {
@@ -82,36 +72,74 @@ function updateButtonStates() {
 updateButtonStates();
 
 timerDisplay.addEventListener('click', () => {
-  if (isEditing) return;
+  // Don't edit if timer is running
+  if (isEditing || timerInterval !== null) return;
   isEditing = true;
-  const currentMins = Math.floor(totalTime / 60);
+
   const input = document.createElement('input');
-  input.type = 'number';
-  input.value = currentMins;
-  input.min = 1;
-  input.max = maxTimerInput;
+  input.type = 'text'; // Use text to control formatting
+  input.value = '000000'; // Initial internal state
   input.classList.add('timer-input');
+  
+  // Create a visual display wrapper for the input
   timerDisplay.innerHTML = '';
   timerDisplay.appendChild(input);
   input.focus();
-  input.select();
+
+  // Function to format the string 000530 into 00:05:30
+  const formatInput = (val) => {
+    const padded = val.padStart(6, '0').slice(-6);
+    const h = padded.slice(0, 2);
+    const m = padded.slice(2, 4);
+    const s = padded.slice(4, 6);
+    return `${h}:${m}:${s}`;
+  };
+
+  // Set initial visual
+  input.value = formatInput('');
+
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
-      const mins = parseInt(input.value);
-      if (mins > 0 && mins <= maxTimerInput) {
+      // Logic to convert HHMMSS to total seconds
+      const raw = input.value.replace(/:/g, '');
+      const h = parseInt(raw.slice(0, 2)) || 0;
+      const m = parseInt(raw.slice(2, 4)) || 0;
+      const s = parseInt(raw.slice(4, 6)) || 0;
+      
+      const newTotal = (h * 3600) + (m * 60) + s;
+
+      if (newTotal > 0) {
         clearInterval(timerInterval);
         timerInterval = null;
-        totalTime = mins * 60;
+        totalTime = newTotal;
         timeRemaining = totalTime;
-        updateDisplay();
         updateButtonStates();
       }
       revert();
     } else if (e.key === 'Escape') {
       revert();
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      const currentDigits = input.value.replace(/:/g, '');
+      const newDigits = currentDigits.slice(0, -1);
+      input.value = formatInput(newDigits);
+    } else if (/^\d$/.test(e.key)) {
+      e.preventDefault();
+      const currentDigits = input.value.replace(/:/g, '').replace(/^0+/, '');
+      if (currentDigits.length < 6) {
+        input.value = formatInput(currentDigits + e.key);
+      }
+    } else if (e.key.length === 1) {
+      // Prevent non-numeric characters
+      e.preventDefault();
     }
   });
-  input.addEventListener('blur', revert);
+
+  input.addEventListener('blur', () => {
+    // Small timeout to allow Enter key logic to finish if blurred by Enter
+    setTimeout(revert, 100);
+  });
+
   function revert() {
     isEditing = false;
     updateDisplay();
