@@ -73,10 +73,10 @@ function updateDisplay() {
   const mins = Math.floor((timeRemaining % 3600) / 60);
   const secs = timeRemaining % 60;
   if (hours > 0) {
-    timerDisplay.textContent = 
+    timerDisplay.textContent =
       `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   } else {
-    timerDisplay.textContent = 
+    timerDisplay.textContent =
       `${mins}:${secs.toString().padStart(2, '0')}`;
   }
 }
@@ -137,5 +137,50 @@ chrome.storage.local.get('user', (data) => {
     userName.textContent = `Signed in as ${data.user.name}`;
     signedOutDiv.style.display = 'none';
     signedInDiv.style.display = 'block';
+  }
+});
+
+// --- Pet Health UI Logic ---
+const petImage = document.getElementById('petImage');
+const healthBarFill = document.getElementById('healthBarFill');
+const healthText = document.getElementById('healthText');
+
+function updatePetUI(pet) {
+  if (!pet) return;
+
+  const health = Math.floor(pet.health);
+  healthText.textContent = `${health}/100`;
+  healthBarFill.style.width = `${health}%`;
+
+
+  healthBarFill.classList.remove('high', 'medium', 'low');
+  if (health > 50) {
+    healthBarFill.classList.add('high');
+  } else if (health > 0) {
+    healthBarFill.classList.add('medium');
+  } else {
+    healthBarFill.classList.add('low');
+  }
+
+  if (pet.status === 'dead') {
+    petImage.src = 'assets/pet_dead.png';
+  } else if (pet.status === 'sad') {
+    petImage.src = 'assets/pet_sad.png';
+  } else {
+    petImage.src = 'assets/pet_healthy.png';
+  }
+}
+
+// Initial fetch
+chrome.storage.local.get('pet', (data) => {
+  if (data.pet) {
+    updatePetUI(data.pet);
+  }
+});
+
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.pet && changes.pet.newValue) {
+    updatePetUI(changes.pet.newValue);
   }
 });

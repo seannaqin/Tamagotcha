@@ -6,7 +6,8 @@
   "permissions": [
     "storage",
     "alarms",
-    "tabs"
+    "tabs",
+    "identity"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -28,5 +29,14 @@
     "48": "assets/icon.png",
     "128": "assets/icon.png"
   },
-  "options_page": "options.html"
+  "options_page": "options.html",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoed4HRwToqUmYS8vC8dkM4HjjgL/G4MHVK6hmTz+8VMJ6vxywD67IPKrMRaGHPYfbeWrqKxJCZj/iHnBqpvBcljEFF15vwqpsaiHq+LV+KmU+DGNnx8xbLsBtOfLC1p9hh2hSOWge+9L1Az6C5dPkYlR6Hf/KkVTWMnD6WhEIpgZsaFhLGVKPK1/vSo8SHWh3NOZr5RMQJvzeSmXkN5EvGpOglMEC0I2liVauOqBbRKHAubrjqlE5W/gImb7bwYGk0WJ+e2lKwwW857ofkzPC6v5/sjiAnSY8bxJBf49618dJUEPtzXroZz/4p13Xgc2wSPbcZyBEY4g6/wYukryuwIDAQAB",
+  "oauth2": {
+    "client_id": "94960480955-aes04iam8ukrv421h0nqknicqsjlka7r.apps.googleusercontent.com",
+    "scopes": [
+      "openid",
+      "email",
+      "profile"
+    ]
+  }
 }
