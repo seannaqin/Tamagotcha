@@ -1,207 +1,141 @@
-let state = null;
-let countdownInterval = null;
+let totalTime = 300;
+let timeRemaining = totalTime;
+let timerInterval = null;
+let maxTimerInput = 1440; // 1 day in minutes
 
-// TODO: replace this
+const startBtn = document.getElementById('startBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const resetBtn = document.getElementById('resetBtn');
+const setBtn = document.getElementById('setBtn');
+const timerDisplay = document.getElementById('timerDisplay');
+const customTimeInput = document.getElementById('customTime');
 
-const timerDisplay  = document.getElementById('timerDisplay');
-const sessionLabel  = document.getElementById('sessionLabel');
-const nextInfo      = document.getElementById('nextInfo');
-const startBtn      = document.getElementById('startBtn');
-const pauseBtn      = document.getElementById('pauseBtn');
-const resetBtn      = document.getElementById('resetBtn');
-const petImage      = document.getElementById('petImage');
-const healthBar     = document.getElementById('healthBar');
-const healthPct     = document.getElementById('healthPct');
-const statAge       = document.getElementById('statAge');
-const statDeceased  = document.getElementById('statDeceased');
-const statLongest   = document.getElementById('statLongest');
-const statHours     = document.getElementById('statHours');
-const statLongestStudy = document.getElementById('statLongestStudy');
-const blockedList   = document.getElementById('blockedList');
-const toggleAddForm = document.getElementById('toggleAddForm');
-const addSiteForm   = document.getElementById('addSiteForm');
-const newSiteInput  = document.getElementById('newSiteInput');
-const confirmAdd    = document.getElementById('confirmAdd');
-
-// ── Boot ───────────────────────────────────────────────────────────────────
-loadState();
-
-function loadState() {
-  chrome.runtime.sendMessage({ action: 'getState' }, (result) => {
-    state = result;
-    renderAll();
-    tickCountdown();
-  });
-}
-
-// ── Render all panels ──────────────────────────────────────────────────────
-function renderAll() {
-  renderStats();
-  renderPet();
-  renderTimerPanel();
-  renderBlockedSites();
-}
-
-function renderStats() {
-  const { pet, stats } = state;
-  const ageDays = Math.floor((Date.now() - pet.birthDate) / 86400000);
-  statAge.textContent       = `${ageDays} day${ageDays !== 1 ? 's' : ''}`;
-  statDeceased.textContent  = stats.petsKilled;
-  statLongest.textContent   = `${stats.longestLifespan} days`;
-  statHours.textContent     = Math.floor(stats.hoursStudied);
-
-  const longestMins = stats.longestSessionMins || 0;
-  statLongestStudy.textContent = formatTime(longestMins * 60);
-}
-
-function renderPet() {
-  const { pet } = state;
-  const pct = Math.max(0, Math.min(100, Math.round(pet.health)));
-  healthBar.style.width = pct + '%';
-  healthPct.textContent = pct + '%';
-
-  if (pet.status === 'dead') {
-    petImage.src = 'assets/pet_dead.png';
-  } else if (pet.status === 'sad') {
-    petImage.src = 'assets/pet_sad.png';
-  } else {
-    petImage.src = 'assets/pet_healthy.png';
+// Prevent invalid input (non-numeric, decimals, 'e')
+customTimeInput.addEventListener('input', (e) => {
+  e.target.value = e.target.value.replace(/[^0-9]/g, '');
+  if (parseInt(e.target.value) > maxTimerInput) {
+    e.target.value = '1440';
   }
-}
+});
 
-function renderTimerPanel() {
-  const { session, timers } = state;
-  const breakSecs = (timers.break || 5) * 60;
-  nextInfo.textContent = `Next: ${formatTime(breakSecs)} break`;
-
-  if (session.isActive) {
-    sessionLabel.textContent = session.type === 'break' ? 'Break Time' : 'Study Time';
-    startBtn.textContent = 'Stop';
-    startBtn.classList.add('running');
-    pauseBtn.disabled = false;
-    updateCountdownDisplay();
-  } else {
-    sessionLabel.textContent = 'Study Time';
-    startBtn.textContent = 'Start';
-    startBtn.classList.remove('running');
-    pauseBtn.disabled = true;
-    timerDisplay.textContent = formatTime((timers.work || 25) * 60);
-  }
-}
-
-function renderBlockedSites() {
-  const sites = (state.settings && state.settings.bannedSites) || [];
-  blockedList.innerHTML = '';
-  sites.forEach((site, i) => {
-    const li = document.createElement('li');
-    const removeBtn = document.createElement('button');
-    removeBtn.className = 'remove-btn';
-    removeBtn.textContent = '−';
-    removeBtn.addEventListener('click', () => removeSite(i));
-
-    li.appendChild(removeBtn);
-    li.insertAdjacentHTML('beforeend',
-      `<span class="site-bullet">•</span><span class="site-name" title="${site}">${site}</span>`
-    );
-    blockedList.appendChild(li);
-  });
-}
-
-// ── Countdown ──────────────────────────────────────────────────────────────
-function tickCountdown() {
-  clearInterval(countdownInterval);
-  if (!state.session.isActive) return;
-
-  countdownInterval = setInterval(() => {
-    updateCountdownDisplay();
-  }, 1000);
-}
-
-function updateCountdownDisplay() {
-  const remaining = Math.max(0, Math.floor((state.session.endTime - Date.now()) / 1000));
-  timerDisplay.textContent = formatTime(remaining);
-
-  if (remaining <= 0) {
-    clearInterval(countdownInterval);
-    setTimeout(loadState, 1200);
-  }
-}
-
-function formatTime(totalSecs) {
-  const m = Math.floor(totalSecs / 60);
-  const s = totalSecs % 60;
-  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-}
-
-// ── Timer controls ─────────────────────────────────────────────────────────
 startBtn.addEventListener('click', () => {
-  if (state.session.isActive) {
-    chrome.runtime.sendMessage({ action: 'stopTimer' }, () => {
-      clearInterval(countdownInterval);
-      loadState();
-    });
-  } else {
-    const duration = state.timers.work || 25;
-    chrome.runtime.sendMessage({ action: 'startTimer', type: 'work', duration }, () => {
-      loadState();
-    });
+  if (!timerInterval) {
+    timerInterval = setInterval(tick, 1000);
+    updateButtonStates();
   }
 });
 
 pauseBtn.addEventListener('click', () => {
-  chrome.runtime.sendMessage({ action: 'stopTimer' }, () => {
-    clearInterval(countdownInterval);
-    loadState();
-  });
+  clearInterval(timerInterval);
+  timerInterval = null;
+  updateButtonStates();
 });
 
 resetBtn.addEventListener('click', () => {
-  if (state.session.isActive) {
-    chrome.runtime.sendMessage({ action: 'stopTimer' }, () => {
-      clearInterval(countdownInterval);
-      loadState();
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timeRemaining = totalTime;
+  updateDisplay();
+  updateButtonStates();
+});
+
+setBtn.addEventListener('click', () => {
+  const mins = parseInt(customTimeInput.value);
+  if (mins > 0) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    totalTime = mins * 60;
+    timeRemaining = totalTime;
+    updateDisplay();
+    updateButtonStates();
+  }
+});
+
+function tick() {
+  timeRemaining--;
+  updateDisplay();
+
+  if (timeRemaining <= 0) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    updateButtonStates();
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'icons/icon-128.png',
+      title: 'Timer Complete',
+      message: 'Your timer has finished!'
     });
+  }
+}
+
+function updateDisplay() {
+  const hours = Math.floor(timeRemaining / 3600);
+  const mins = Math.floor((timeRemaining % 3600) / 60);
+  const secs = timeRemaining % 60;
+  if (hours > 0) {
+    timerDisplay.textContent = 
+      `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   } else {
-    loadState();
+    timerDisplay.textContent = 
+      `${mins}:${secs.toString().padStart(2, '0')}`;
   }
-});
-
-// ── Blocked sites ──────────────────────────────────────────────────────────
-toggleAddForm.addEventListener('click', () => {
-  const hidden = addSiteForm.classList.toggle('hidden');
-  if (!hidden) newSiteInput.focus();
-});
-
-confirmAdd.addEventListener('click', addSite);
-newSiteInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') addSite();
-  if (e.key === 'Escape') addSiteForm.classList.add('hidden');
-});
-
-function addSite() {
-  const raw = newSiteInput.value.trim().toLowerCase();
-  if (!raw) return;
-  const site = raw.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
-  if (!site) return;
-
-  const sites = (state.settings && state.settings.bannedSites) || [];
-  if (sites.includes(site)) {
-    newSiteInput.value = '';
-    addSiteForm.classList.add('hidden');
-    return;
-  }
-
-  state.settings.bannedSites = [...sites, site];
-  chrome.storage.local.set({ settings: state.settings }, () => {
-    newSiteInput.value = '';
-    addSiteForm.classList.add('hidden');
-    renderBlockedSites();
-  });
 }
 
-function removeSite(index) {
-  state.settings.bannedSites = state.settings.bannedSites.filter((_, i) => i !== index);
-  chrome.storage.local.set({ settings: state.settings }, () => {
-    renderBlockedSites();
-  });
+function updateButtonStates() {
+  // Enable Start only if timer is NOT running
+  startBtn.disabled = timerInterval !== null;
+
+  // Enable Pause only if timer IS running
+  pauseBtn.disabled = timerInterval === null;
 }
+
+// Initialize button states on load
+updateButtonStates();
+
+const signInBtn = document.getElementById('signInBtn');
+const signOutBtn = document.getElementById('signOutBtn');
+const signedInDiv = document.getElementById('signedIn');
+const signedOutDiv = document.getElementById('signedOut');
+const userName = document.getElementById('userName');
+
+signInBtn.addEventListener('click', () => {
+  chrome.identity.getAuthToken({ interactive: true }, async (token) => {
+    if (chrome.runtime.lastError) {
+      console.error(chrome.runtime.lastError);
+      return;
+    }
+
+    const response = await fetch("https://www.googleapis.com/oauth2/v1/userinfo", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    const user = await response.json();
+    userName.textContent = `Signed in as ${user.name}`;
+    signedOutDiv.style.display = 'none';
+    signedInDiv.style.display = 'block';
+
+    // Store user info for later use
+    chrome.storage.local.set({ user });
+  });
+});
+
+signOutBtn.addEventListener('click', () => {
+  chrome.identity.getAuthToken({ interactive: false }, (token) => {
+    if (token) {
+      chrome.identity.removeCachedAuthToken({ token }, () => {
+        chrome.storage.local.remove('user');
+        signedInDiv.style.display = 'none';
+        signedOutDiv.style.display = 'block';
+      });
+    }
+  });
+});
+
+// Check if already signed in on load
+chrome.storage.local.get('user', (data) => {
+  if (data.user) {
+    userName.textContent = `Signed in as ${data.user.name}`;
+    signedOutDiv.style.display = 'none';
+    signedInDiv.style.display = 'block';
+  }
+});
