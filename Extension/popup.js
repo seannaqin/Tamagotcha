@@ -1,6 +1,8 @@
 let state = null;
 let countdownInterval = null;
 
+// TODO: replace this
+
 const timerDisplay  = document.getElementById('timerDisplay');
 const sessionLabel  = document.getElementById('sessionLabel');
 const nextInfo      = document.getElementById('nextInfo');
