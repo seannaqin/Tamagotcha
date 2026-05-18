@@ -14,7 +14,7 @@ function loadState() {
   chrome.runtime.sendMessage({ action: 'getState' }, (result) => {
     state = result;
     updateButtonStates();
-    
+
     if (state.session.isActive) {
       clearInterval(countdownInterval);
       countdownInterval = setInterval(updateDisplay, 1000);
@@ -56,7 +56,7 @@ resetBtn.addEventListener('click', () => {
 
 function updateDisplay() {
   if (!state) return;
-  
+
   let secs = 0;
   if (state.session.isActive) {
     secs = Math.max(0, Math.floor((state.session.endTime - Date.now()) / 1000));
@@ -69,7 +69,7 @@ function updateDisplay() {
   const hours = Math.floor(secs / 3600);
   const mins = Math.floor((secs % 3600) / 60);
   const s = secs % 60;
-  
+
   if (hours > 0) {
     timerDisplay.textContent = `${hours}:${mins.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   } else {
@@ -79,7 +79,7 @@ function updateDisplay() {
 
 function updateButtonStates() {
   if (!state) return;
-  
+
   // Start button enabled if totally idle (not active, not paused)
   startBtn.disabled = state.session.isActive || !!state.session.pausedRemaining;
 
@@ -242,7 +242,7 @@ function updatePetUI(pet) {
   const health = Math.floor(pet.health);
   const healthText = document.getElementById('healthText');
   const healthBarFill = document.getElementById('healthBarFill');
-  
+
   if (healthText) healthText.textContent = `${health}/100`;
   if (healthBarFill) {
     healthBarFill.style.width = `${health}%`;

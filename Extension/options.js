@@ -1,25 +1,25 @@
 let state = null;
 let countdownInterval = null;
 
-const timerDisplay  = document.getElementById('timerDisplay');
-const sessionLabel  = document.getElementById('sessionLabel');
-const nextInfo      = document.getElementById('nextInfo');
-const pauseBtn      = document.getElementById('pauseBtn');
-const resetBtn      = document.getElementById('resetBtn');
-const petImage      = document.getElementById('petImage');
-const healthBar     = document.getElementById('healthBar');
-const healthPct     = document.getElementById('healthPct');
-const statAge       = document.getElementById('statAge');
-const statDeceased  = document.getElementById('statDeceased');
-const statLongest   = document.getElementById('statLongest');
-const statHours     = document.getElementById('statHours');
+const timerDisplay = document.getElementById('timerDisplay');
+const sessionLabel = document.getElementById('sessionLabel');
+const nextInfo = document.getElementById('nextInfo');
+const pauseBtn = document.getElementById('pauseBtn');
+const resetBtn = document.getElementById('resetBtn');
+const petImage = document.getElementById('petImage');
+const healthBar = document.getElementById('healthBar');
+const healthPct = document.getElementById('healthPct');
+const statAge = document.getElementById('statAge');
+const statDeceased = document.getElementById('statDeceased');
+const statLongest = document.getElementById('statLongest');
+const statHours = document.getElementById('statHours');
 const statLongestStudy = document.getElementById('statLongestStudy');
-const blockedList   = document.getElementById('blockedList');
+const blockedList = document.getElementById('blockedList');
 const toggleAddForm = document.getElementById('toggleAddForm');
-const addSiteForm   = document.getElementById('addSiteForm');
-const newSiteInput  = document.getElementById('newSiteInput');
-const confirmAdd    = document.getElementById('confirmAdd');
-const reviveBtn     = document.getElementById('reviveBtn');
+const addSiteForm = document.getElementById('addSiteForm');
+const newSiteInput = document.getElementById('newSiteInput');
+const confirmAdd = document.getElementById('confirmAdd');
+const reviveBtn = document.getElementById('reviveBtn');
 
 // ── Boot ───────────────────────────────────────────────────────────────────
 loadState();
@@ -43,10 +43,10 @@ function renderAll() {
 function renderStats() {
   const { pet, stats } = state;
   const ageDays = Math.floor((Date.now() - pet.birthDate) / 86400000);
-  statAge.textContent       = `${ageDays} day${ageDays !== 1 ? 's' : ''}`;
-  statDeceased.textContent  = stats.petsKilled;
-  statLongest.textContent   = `${stats.longestLifespan} days`;
-  statHours.textContent     = Math.floor(stats.hoursStudied);
+  statAge.textContent = `${ageDays} day${ageDays !== 1 ? 's' : ''}`;
+  statDeceased.textContent = stats.petsKilled;
+  statLongest.textContent = `${stats.longestLifespan} days`;
+  statHours.textContent = Math.floor(stats.hoursStudied);
 
   const longestMins = stats.longestSessionMins || 0;
   statLongestStudy.textContent = formatTime(longestMins * 60);
