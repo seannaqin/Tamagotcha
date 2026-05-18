@@ -1,75 +1,103 @@
-let totalTime = 300;
-let timeRemaining = totalTime;
-let timerInterval = null;
+let state = null;
+let countdownInterval = null;
 let maxTimerInput = 1440; // 1 day in minutes
 let isEditing = false;
+let customDuration = null; // User edited duration in seconds
 
 const startBtn = document.getElementById('startBtn');
 const pauseBtn = document.getElementById('pauseBtn');
 const resetBtn = document.getElementById('resetBtn');
 const timerDisplay = document.getElementById('timerDisplay');
+const reviveBtn = document.getElementById('reviveBtn');
+
+function loadState() {
+  chrome.runtime.sendMessage({ action: 'getState' }, (result) => {
+    state = result;
+    updateButtonStates();
+    
+    if (state.session.isActive) {
+      clearInterval(countdownInterval);
+      countdownInterval = setInterval(updateDisplay, 1000);
+      updateDisplay();
+    } else {
+      clearInterval(countdownInterval);
+      updateDisplay();
+    }
+  });
+}
 
 startBtn.addEventListener('click', () => {
-  if (!timerInterval) {
-    timerInterval = setInterval(tick, 1000);
-    updateButtonStates();
-  }
+  if (!state || state.session.isActive) return;
+  const durationMins = customDuration ? Math.round(customDuration / 60) : (state.timers.work || 25);
+  chrome.runtime.sendMessage({ action: 'startTimer', type: 'work', duration: durationMins }, () => {
+    loadState();
+  });
 });
 
 pauseBtn.addEventListener('click', () => {
-  clearInterval(timerInterval);
-  timerInterval = null;
-  updateButtonStates();
+  if (state && state.session.isActive) {
+    chrome.runtime.sendMessage({ action: 'pauseTimer' }, () => {
+      loadState();
+    });
+  } else if (state && state.session.pausedRemaining) {
+    // Resume
+    chrome.runtime.sendMessage({ action: 'resumeTimer' }, () => {
+      loadState();
+    });
+  }
 });
 
 resetBtn.addEventListener('click', () => {
-  clearInterval(timerInterval);
-  timerInterval = null;
-  timeRemaining = totalTime;
-  updateDisplay();
-  updateButtonStates();
+  chrome.runtime.sendMessage({ action: 'stopTimer' }, () => {
+    customDuration = null;
+    loadState();
+  });
 });
 
-function tick() {
-  timeRemaining--;
-  updateDisplay();
-
-  if (timeRemaining <= 0) {
-    clearInterval(timerInterval);
-    timerInterval = null;
-    updateButtonStates();
-    chrome.notifications.create({
-      type: 'basic',
-      iconUrl: 'icons/icon-128.png',
-      title: 'Timer Complete',
-      message: 'Your timer has finished!'
-    });
-  }
-}
-
 function updateDisplay() {
-  const hours = Math.floor(timeRemaining / 3600);
-  const mins = Math.floor((timeRemaining % 3600) / 60);
-  const secs = timeRemaining % 60;
-  if (hours > 0) {
-    timerDisplay.textContent =
-      `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  if (!state) return;
+  
+  let secs = 0;
+  if (state.session.isActive) {
+    secs = Math.max(0, Math.floor((state.session.endTime - Date.now()) / 1000));
+  } else if (state.session.pausedRemaining) {
+    secs = state.session.pausedRemaining;
   } else {
-    timerDisplay.textContent =
-      `${mins}:${secs.toString().padStart(2, '0')}`;
+    secs = customDuration || ((state.timers.work || 25) * 60);
+  }
+
+  const hours = Math.floor(secs / 3600);
+  const mins = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  
+  if (hours > 0) {
+    timerDisplay.textContent = `${hours}:${mins.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  } else {
+    timerDisplay.textContent = `${mins}:${s.toString().padStart(2, '0')}`;
   }
 }
 
 function updateButtonStates() {
-  // Enable Start only if timer is NOT running
-  startBtn.disabled = timerInterval !== null;
+  if (!state) return;
+  
+  // Start button enabled if totally idle (not active, not paused)
+  startBtn.disabled = state.session.isActive || !!state.session.pausedRemaining;
 
-  // Enable Pause only if timer IS running
-  pauseBtn.disabled = timerInterval === null;
+  // Pause button says Pause if running, Resume if paused
+  if (state.session.isActive) {
+    pauseBtn.disabled = false;
+    pauseBtn.textContent = 'Pause';
+  } else if (state.session.pausedRemaining) {
+    pauseBtn.disabled = false;
+    pauseBtn.textContent = 'Resume';
+  } else {
+    pauseBtn.disabled = true;
+    pauseBtn.textContent = 'Pause';
+  }
 }
 
-// Initialize button states on load
-updateButtonStates();
+// Initial fetch
+loadState();
 
 timerDisplay.addEventListener('click', () => {
   // Don't edit if timer is running
@@ -109,11 +137,8 @@ timerDisplay.addEventListener('click', () => {
       const newTotal = (h * 3600) + (m * 60) + s;
 
       if (newTotal > 0) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-        totalTime = newTotal;
-        timeRemaining = totalTime;
-        updateButtonStates();
+        customDuration = newTotal;
+        updateDisplay();
       }
       revert();
     } else if (e.key === 'Escape') {
@@ -208,5 +233,55 @@ chrome.storage.local.get('user', (data) => {
     userName.textContent = `Signed in as ${data.user.name}`;
     signedOutDiv.style.display = 'none';
     signedInDiv.style.display = 'block';
+  }
+});
+
+function updatePetUI(pet) {
+  if (!pet) return;
+
+  const health = Math.floor(pet.health);
+  const healthText = document.getElementById('healthText');
+  const healthBarFill = document.getElementById('healthBarFill');
+  
+  if (healthText) healthText.textContent = `${health}/100`;
+  if (healthBarFill) {
+    healthBarFill.style.width = `${health}%`;
+    healthBarFill.classList.remove('high', 'medium', 'low');
+    if (health > 50) {
+      healthBarFill.classList.add('high');
+    } else if (health > 0) {
+      healthBarFill.classList.add('medium');
+    } else {
+      healthBarFill.classList.add('low');
+    }
+  }
+
+  if (pet.status === 'dead') {
+    petImage.src = 'assets/pet_dead.png';
+    if (reviveBtn) reviveBtn.style.display = 'inline-block';
+  } else if (pet.status === 'sad') {
+    petImage.src = 'assets/pet_sad.png';
+    if (reviveBtn) reviveBtn.style.display = 'none';
+  } else {
+    petImage.src = 'assets/happy_pet.jpg';
+    if (reviveBtn) reviveBtn.style.display = 'none';
+  }
+}
+
+if (reviveBtn) {
+  reviveBtn.addEventListener('click', () => {
+    chrome.runtime.sendMessage({ action: 'revivePet' }, () => {
+      chrome.storage.local.get('pet', (data) => updatePetUI(data.pet));
+    });
+  });
+}
+
+// Listen for storage changes to update live
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.pet && changes.pet.newValue) {
+    updatePetUI(changes.pet.newValue);
+  }
+  if (area === 'local' && changes.session) {
+    loadState();
   }
 });

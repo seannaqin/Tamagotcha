@@ -10,8 +10,13 @@
     <button id="optionsBtn" class="options-arrow" title="Options">
       <img src="assets/arrow.png" alt="Options">
     </button>
-    <div class="pet-img-container">
-      <img src="./assets/happy_pet.jpg" alt="Pet Image" id="happyPet">
+    <div id="petContainer">
+      <img id="petImage" src="assets/happy_pet.jpg" alt="Tamagotcha Pet">
+      <div class="health-bar-container">
+        <div id="healthBarFill" class="health-bar-fill"></div>
+        <span id="healthText">100/100</span>
+      </div>
+      <button id="reviveBtn" class="btn secondary" style="display: none; margin-top: 10px;">Revive Pet</button>
     </div>
     <div class="timer-display" id="timerDisplay">5:00</div>
     <div class="controls">

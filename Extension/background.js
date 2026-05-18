@@ -55,6 +55,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.action === "stopTimer") {
     stopTimer(true);
     sendResponse({ success: true });
+  } else if (request.action === "pauseTimer") {
+    pauseTimer();
+    sendResponse({ success: true });
+  } else if (request.action === "resumeTimer") {
+    resumeTimer();
+    sendResponse({ success: true });
+  } else if (request.action === "revivePet") {
+    revivePet();
+    sendResponse({ success: true });
   } else if (request.action === "getState") {
     chrome.storage.local.get(null, (state) => sendResponse(state));
     return true; // async response
@@ -103,14 +112,19 @@ function stopTimer(manual = false) {
   chrome.alarms.clear("minuteTick");
 
   chrome.storage.local.get(["session", "pet", "stats"], (data) => {
-    if (!data.session.isActive) return;
+    if (!data.session.isActive && !data.session.pausedRemaining) return;
 
     let newPet = { ...data.pet };
     let newStats = { ...data.stats };
 
     // Apply rewards if it was a work timer and finished naturally or mostly finished
     if (data.session.type === "work") {
-      const minutesLived = (Date.now() - data.session.startTime) / 60000;
+      let minutesLived;
+      if (data.session.pausedRemaining) {
+         minutesLived = data.session.totalWorkMinutes - (data.session.pausedRemaining / 60);
+      } else {
+         minutesLived = (Date.now() - data.session.startTime) / 60000;
+      }
 
       if (!manual || minutesLived > 5) { // Reward some even if stopped manually after 5 mins
         newStats.hoursStudied += (minutesLived / 60);
@@ -141,10 +155,68 @@ function stopTimer(manual = false) {
       startTime: 0,
       endTime: 0,
       violations: 0,
-      totalWorkMinutes: 0
+      totalWorkMinutes: 0,
+      pausedRemaining: null
     };
 
     chrome.storage.local.set({ session: newSession, pet: newPet, stats: newStats });
+  });
+}
+
+function pauseTimer() {
+  chrome.storage.local.get(["session"], (data) => {
+    if (!data.session.isActive) return;
+    
+    const remainingSeconds = Math.max(0, Math.floor((data.session.endTime - Date.now()) / 1000));
+    
+    chrome.alarms.clear("timerEnd");
+    chrome.alarms.clear("minuteTick");
+    
+    const newSession = {
+      ...data.session,
+      isActive: false,
+      pausedRemaining: remainingSeconds
+    };
+    chrome.storage.local.set({ session: newSession });
+  });
+}
+
+function resumeTimer() {
+  chrome.storage.local.get(["session"], (data) => {
+    if (data.session.isActive || !data.session.pausedRemaining) return;
+    
+    const remainingSeconds = data.session.pausedRemaining;
+    const now = Date.now();
+    const endTime = now + (remainingSeconds * 1000);
+    
+    chrome.alarms.create("timerEnd", { when: endTime });
+    chrome.alarms.create("minuteTick", { periodInMinutes: 1 });
+    
+    const newSession = {
+      ...data.session,
+      isActive: true,
+      endTime: endTime,
+      pausedRemaining: null,
+      startTime: now - ((data.session.totalWorkMinutes * 60000) - (remainingSeconds * 1000)) // adjust startTime so stopTimer calculates correctly if stopped
+    };
+    chrome.storage.local.set({ session: newSession }, () => {
+      updateLastActive();
+    });
+  });
+}
+
+function revivePet() {
+  chrome.storage.local.get(["pet"], (data) => {
+    if (data.pet.status !== "dead") return;
+    
+    const newPet = {
+      ...data.pet,
+      health: 100,
+      status: "happy",
+      birthDate: Date.now()
+    };
+    
+    chrome.storage.local.set({ pet: newPet });
   });
 }
 
