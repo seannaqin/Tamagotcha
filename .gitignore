@@ -147,3 +147,5 @@ vite.config.ts.timestamp-*
 # Key for manifest.json
 *.pem
 *.crx
+
+client_secret_*

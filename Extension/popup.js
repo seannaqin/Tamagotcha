@@ -14,7 +14,7 @@ function loadState() {
   chrome.runtime.sendMessage({ action: 'getState' }, (result) => {
     state = result;
     updateButtonStates();
-    
+
     if (state.session.isActive) {
       clearInterval(countdownInterval);
       countdownInterval = setInterval(updateDisplay, 1000);
@@ -56,7 +56,7 @@ resetBtn.addEventListener('click', () => {
 
 function updateDisplay() {
   if (!state) return;
-  
+
   let secs = 0;
   if (state.session.isActive) {
     secs = Math.max(0, Math.floor((state.session.endTime - Date.now()) / 1000));
@@ -69,7 +69,7 @@ function updateDisplay() {
   const hours = Math.floor(secs / 3600);
   const mins = Math.floor((secs % 3600) / 60);
   const s = secs % 60;
-  
+
   if (hours > 0) {
     timerDisplay.textContent = `${hours}:${mins.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   } else {
@@ -79,7 +79,7 @@ function updateDisplay() {
 
 function updateButtonStates() {
   if (!state) return;
-  
+
   // Start button enabled if totally idle (not active, not paused)
   startBtn.disabled = state.session.isActive || !!state.session.pausedRemaining;
 
@@ -193,6 +193,7 @@ if (optionsBtn) {
 }
 
 async function getAuthToken(retries = 10) {
+  console.log("enetered getauthtoken");
   for (let i = 0; i < retries; i++) {
     try {
       const token = await new Promise((resolve, reject) => {
@@ -201,6 +202,7 @@ async function getAuthToken(retries = 10) {
           else resolve(token);
         });
       });
+      console.log("exiting getauthtoken");
       return token;
     } catch (err) {
       if (i === retries - 1) throw err; // last attempt, give up
@@ -210,20 +212,21 @@ async function getAuthToken(retries = 10) {
 }
 
 signInBtn.addEventListener('click', async () => {
+  console.log("entered signin");
   try {
     const token = await getAuthToken();
-
+    console.log("got token");
     const response = await fetch("https://www.googleapis.com/oauth2/v1/userinfo", {
       headers: { Authorization: `Bearer ${token}` }
     });
 
     const user = await response.json();
+    console.log("response received");
+    chrome.storage.local.set({ user, token });
     userName.textContent = `Signed in as ${user.name}`;
     signedOutDiv.style.display = 'none';
     signedInDiv.style.display = 'block';
 
-    // Store user info for later use
-    chrome.storage.local.set({ user });
   }
   catch (err) {
     errorMsg.textContent = `Sign in failed: ${err.message}`;
@@ -232,16 +235,16 @@ signInBtn.addEventListener('click', async () => {
 });
 
 
-signOutBtn.addEventListener('click', () => {
-  chrome.identity.getAuthToken({ interactive: false }, (token) => {
-    if (token) {
-      chrome.identity.removeCachedAuthToken({ token }, () => {
-        chrome.storage.local.remove('user');
-        signedInDiv.style.display = 'none';
-        signedOutDiv.style.display = 'block';
-      });
-    }
-  });
+signOutBtn.addEventListener('click', async () => {
+  const { token } = await chrome.storage.local.get("token");
+  if (token) {
+    await fetch(`https://accounts.google.com/o/oauth2/revoke?token=${token}`);
+    await new Promise(r => chrome.identity.removeCachedAuthToken({ token }, r));
+    await new Promise(r => chrome.identity.clearAllCachedAuthTokens(r));
+  }
+  await chrome.storage.local.remove(["user", "token"]);
+  signedInDiv.style.display = 'none';
+  signedOutDiv.style.display = 'block';
 });
 
 // Check if already signed in on load
@@ -259,7 +262,7 @@ function updatePetUI(pet) {
   const health = Math.floor(pet.health);
   const healthText = document.getElementById('healthText');
   const healthBarFill = document.getElementById('healthBarFill');
-  
+
   if (healthText) healthText.textContent = `${health}/100`;
   if (healthBarFill) {
     healthBarFill.style.width = `${health}%`;
