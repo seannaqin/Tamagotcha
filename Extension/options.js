@@ -19,6 +19,7 @@ const toggleAddForm = document.getElementById('toggleAddForm');
 const addSiteForm   = document.getElementById('addSiteForm');
 const newSiteInput  = document.getElementById('newSiteInput');
 const confirmAdd    = document.getElementById('confirmAdd');
+const reviveBtn     = document.getElementById('reviveBtn');
 
 // ── Boot ───────────────────────────────────────────────────────────────────
 loadState();
@@ -59,10 +60,13 @@ function renderPet() {
 
   if (pet.status === 'dead') {
     petImage.src = 'assets/pet_dead.png';
+    if (reviveBtn) reviveBtn.style.display = 'block';
   } else if (pet.status === 'sad') {
     petImage.src = 'assets/pet_sad.png';
+    if (reviveBtn) reviveBtn.style.display = 'none';
   } else {
-    petImage.src = 'assets/pet_healthy.png';
+    petImage.src = 'assets/happy_pet.jpg';
+    if (reviveBtn) reviveBtn.style.display = 'none';
   }
 }
 
@@ -74,14 +78,18 @@ function renderTimerPanel() {
   if (session.isActive) {
     sessionLabel.textContent = session.type === 'break' ? 'Break Time' : 'Study Time';
     pauseBtn.classList.add('running');
-    // pauseBtn acts as the primary start/pause control
     pauseBtn.disabled = false;
     pauseBtn.textContent = '⏸';
     updateCountdownDisplay();
+  } else if (session.pausedRemaining) {
+    sessionLabel.textContent = 'Paused';
+    pauseBtn.classList.remove('running');
+    pauseBtn.disabled = false;
+    pauseBtn.textContent = '▶';
+    timerDisplay.textContent = formatTime(session.pausedRemaining);
   } else {
     sessionLabel.textContent = 'Study Time';
     pauseBtn.classList.remove('running');
-    // enable pauseBtn so it can start the timer (acts as play button when idle)
     pauseBtn.disabled = false;
     pauseBtn.textContent = '▶';
     timerDisplay.textContent = formatTime((timers.work || 25) * 60);
@@ -135,8 +143,11 @@ function formatTime(totalSecs) {
 // ── Timer controls ─────────────────────────────────────────────────────────
 pauseBtn.addEventListener('click', () => {
   if (state.session.isActive) {
-    chrome.runtime.sendMessage({ action: 'stopTimer' }, () => {
-      clearInterval(countdownInterval);
+    chrome.runtime.sendMessage({ action: 'pauseTimer' }, () => {
+      loadState();
+    });
+  } else if (state.session.pausedRemaining) {
+    chrome.runtime.sendMessage({ action: 'resumeTimer' }, () => {
       loadState();
     });
   } else {
@@ -157,6 +168,14 @@ resetBtn.addEventListener('click', () => {
     loadState();
   }
 });
+
+if (reviveBtn) {
+  reviveBtn.addEventListener('click', () => {
+    chrome.runtime.sendMessage({ action: 'revivePet' }, () => {
+      loadState();
+    });
+  });
+}
 
 // ── Blocked sites ──────────────────────────────────────────────────────────
 toggleAddForm.addEventListener('click', () => {
@@ -197,3 +216,10 @@ function removeSite(index) {
     renderBlockedSites();
   });
 }
+
+// ── Storage Listener ───────────────────────────────────────────────────────
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && (changes.session || changes.pet || changes.stats)) {
+    loadState();
+  }
+});
