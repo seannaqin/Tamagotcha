@@ -29,6 +29,7 @@
     "48": "assets/icon.png",
     "128": "assets/icon.png"
   },
+  "options_page": "options.html",
   "oauth2": {
     "client_id": "94960480955-aes04iam8ukrv421h0nqknicqsjlka7r.apps.googleusercontent.com",
     "scopes": ["openid", "email", "profile"]
