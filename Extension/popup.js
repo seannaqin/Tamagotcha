@@ -28,8 +28,8 @@ function loadState() {
 
 startBtn.addEventListener('click', () => {
   if (!state || state.session.isActive) return;
-  const durationMins = customDuration ? Math.round(customDuration / 60) : (state.timers.work || 25);
-  chrome.runtime.sendMessage({ action: 'startTimer', type: 'work', duration: durationMins }, () => {
+  const durationSecs = customDuration || ((state.timers.work || 25) * 60);
+  chrome.runtime.sendMessage({ action: 'startTimer', type: 'work', duration: durationSecs / 60 }, () => {
     loadState();
   });
 });
@@ -49,7 +49,6 @@ pauseBtn.addEventListener('click', () => {
 
 resetBtn.addEventListener('click', () => {
   chrome.runtime.sendMessage({ action: 'stopTimer' }, () => {
-    customDuration = null;
     loadState();
   });
 });
@@ -99,69 +98,67 @@ function updateButtonStates() {
 // Initial fetch
 loadState();
 
+// Restore custom timer duration
+chrome.storage.local.get('customDuration', (data) => {
+  if (data.customDuration) {
+    customDuration = data.customDuration;
+    updateDisplay();
+  }
+});
+
 timerDisplay.addEventListener('click', () => {
-  // Don't edit if timer is running
-  if (isEditing || timerInterval !== null) return;
+  if (isEditing || !state || state.session.isActive || state.session.pausedRemaining) return;
+
   isEditing = true;
 
   const input = document.createElement('input');
-  input.type = 'text'; // Use text to control formatting
-  input.value = '000000'; // Initial internal state
+  input.type = 'text';
   input.classList.add('timer-input');
 
-  // Create a visual display wrapper for the input
+  const formatInput = (val) => {
+    const padded = val.padStart(6, '0').slice(-6);
+    return `${padded.slice(0, 2)}:${padded.slice(2, 4)}:${padded.slice(4, 6)}`;
+  };
+
+  // digits starts empty — first keypress begins a fresh entry
+  let digits = '';
+  input.value = formatInput(digits); // shows 00:00:00 as placeholder
+
   timerDisplay.innerHTML = '';
   timerDisplay.appendChild(input);
   input.focus();
 
-  // Function to format the string 000530 into 00:05:30
-  const formatInput = (val) => {
-    const padded = val.padStart(6, '0').slice(-6);
-    const h = padded.slice(0, 2);
-    const m = padded.slice(2, 4);
-    const s = padded.slice(4, 6);
-    return `${h}:${m}:${s}`;
-  };
-
-  // Set initial visual
-  input.value = formatInput('');
-
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
-      // Logic to convert HHMMSS to total seconds
-      const raw = input.value.replace(/:/g, '');
-      const h = parseInt(raw.slice(0, 2)) || 0;
-      const m = parseInt(raw.slice(2, 4)) || 0;
-      const s = parseInt(raw.slice(4, 6)) || 0;
-
+      const padded = digits.padStart(6, '0').slice(-6);
+      const h = parseInt(padded.slice(0, 2)) || 0;
+      const m = parseInt(padded.slice(2, 4)) || 0;
+      const s = parseInt(padded.slice(4, 6)) || 0;
       const newTotal = (h * 3600) + (m * 60) + s;
 
       if (newTotal > 0) {
         customDuration = newTotal;
-        updateDisplay();
+        chrome.storage.local.set({ customDuration: newTotal });
       }
       revert();
     } else if (e.key === 'Escape') {
       revert();
     } else if (e.key === 'Backspace') {
       e.preventDefault();
-      const currentDigits = input.value.replace(/:/g, '');
-      const newDigits = currentDigits.slice(0, -1);
-      input.value = formatInput(newDigits);
+      digits = digits.slice(0, -1);
+      input.value = formatInput(digits);
     } else if (/^\d$/.test(e.key)) {
       e.preventDefault();
-      const currentDigits = input.value.replace(/:/g, '').replace(/^0+/, '');
-      if (currentDigits.length < 6) {
-        input.value = formatInput(currentDigits + e.key);
+      if (digits.length < 6) {
+        digits += e.key;
       }
+      input.value = formatInput(digits);
     } else if (e.key.length === 1) {
-      // Prevent non-numeric characters
       e.preventDefault();
     }
   });
 
   input.addEventListener('blur', () => {
-    // Small timeout to allow Enter key logic to finish if blurred by Enter
     setTimeout(revert, 100);
   });
 
@@ -170,6 +167,7 @@ timerDisplay.addEventListener('click', () => {
     updateDisplay();
   }
 });
+
 
 const signInBtn = document.getElementById('signInBtn');
 const signOutBtn = document.getElementById('signOutBtn');

@@ -1,5 +1,6 @@
 let state = null;
 let countdownInterval = null;
+let customDuration = null;
 
 const timerDisplay  = document.getElementById('timerDisplay');
 const sessionLabel  = document.getElementById('sessionLabel');
@@ -27,8 +28,12 @@ loadState();
 function loadState() {
   chrome.runtime.sendMessage({ action: 'getState' }, (result) => {
     state = result;
-    renderAll();
-    tickCountdown();
+    chrome.storage.local.get('customDuration', (data) => {
+      customDuration = data.customDuration || null;
+
+      renderAll();
+      tickCountdown();
+    });
   });
 }
 
@@ -92,7 +97,7 @@ function renderTimerPanel() {
     pauseBtn.classList.remove('running');
     pauseBtn.disabled = false;
     pauseBtn.textContent = '▶';
-    timerDisplay.textContent = formatTime((timers.work || 25) * 60);
+    timerDisplay.textContent = formatTime(customDuration || ((timers.work || 25) * 60));
   }
 }
 
@@ -151,7 +156,9 @@ pauseBtn.addEventListener('click', () => {
       loadState();
     });
   } else {
-    const duration = state.timers.work || 25;
+    const duration = customDuration
+      ? customDuration
+      : ((state.timers.work || 25) *60);
     chrome.runtime.sendMessage({ action: 'startTimer', type: 'work', duration }, () => {
       loadState();
     });
@@ -161,7 +168,6 @@ pauseBtn.addEventListener('click', () => {
 resetBtn.addEventListener('click', () => {
   if (state.session.isActive) {
     chrome.runtime.sendMessage({ action: 'stopTimer' }, () => {
-      clearInterval(countdownInterval);
       loadState();
     });
   } else {
@@ -219,7 +225,7 @@ function removeSite(index) {
 
 // ── Storage Listener ───────────────────────────────────────────────────────
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && (changes.session || changes.pet || changes.stats)) {
+  if (area === 'local' && (changes.session || changes.pet || changes.stats || changes.customDuration)) {
     loadState();
   }
 });
