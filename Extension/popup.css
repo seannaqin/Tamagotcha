@@ -5,6 +5,39 @@
   background-color: #FFF3E4;
   border: 10px solid #FDE0BC;
   border-radius: 12px;
+  position: relative;
+}
+
+/* Top-right options arrow */
+.options-arrow {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: none;
+  background: #FDE0BC;
+  color: #6D420A;
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 2px rgba(0,0,0,0.12);
+}
+
+.options-arrow:hover {
+  background: #f5cfa0;
+}
+
+/* Make the arrow image fit the button */
+.options-arrow img {
+  width: 14px;
+  height: 14px;
+  display: block;
+  object-fit: contain;
 }
 
 .timer-display {

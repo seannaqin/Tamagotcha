@@ -4,7 +4,6 @@ let countdownInterval = null;
 const timerDisplay  = document.getElementById('timerDisplay');
 const sessionLabel  = document.getElementById('sessionLabel');
 const nextInfo      = document.getElementById('nextInfo');
-const startBtn      = document.getElementById('startBtn');
 const pauseBtn      = document.getElementById('pauseBtn');
 const resetBtn      = document.getElementById('resetBtn');
 const petImage      = document.getElementById('petImage');
@@ -74,15 +73,17 @@ function renderTimerPanel() {
 
   if (session.isActive) {
     sessionLabel.textContent = session.type === 'break' ? 'Break Time' : 'Study Time';
-    startBtn.textContent = 'Stop';
-    startBtn.classList.add('running');
+    pauseBtn.classList.add('running');
+    // pauseBtn acts as the primary start/pause control
     pauseBtn.disabled = false;
+    pauseBtn.textContent = '⏸';
     updateCountdownDisplay();
   } else {
     sessionLabel.textContent = 'Study Time';
-    startBtn.textContent = 'Start';
-    startBtn.classList.remove('running');
-    pauseBtn.disabled = true;
+    pauseBtn.classList.remove('running');
+    // enable pauseBtn so it can start the timer (acts as play button when idle)
+    pauseBtn.disabled = false;
+    pauseBtn.textContent = '▶';
     timerDisplay.textContent = formatTime((timers.work || 25) * 60);
   }
 }
@@ -132,7 +133,7 @@ function formatTime(totalSecs) {
 }
 
 // ── Timer controls ─────────────────────────────────────────────────────────
-startBtn.addEventListener('click', () => {
+pauseBtn.addEventListener('click', () => {
   if (state.session.isActive) {
     chrome.runtime.sendMessage({ action: 'stopTimer' }, () => {
       clearInterval(countdownInterval);
@@ -144,13 +145,6 @@ startBtn.addEventListener('click', () => {
       loadState();
     });
   }
-});
-
-pauseBtn.addEventListener('click', () => {
-  chrome.runtime.sendMessage({ action: 'stopTimer' }, () => {
-    clearInterval(countdownInterval);
-    loadState();
-  });
 });
 
 resetBtn.addEventListener('click', () => {
