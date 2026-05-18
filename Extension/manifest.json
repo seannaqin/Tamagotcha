@@ -1,6 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Screen Time Tamagotcha",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA24Z6aYc4WPPkk4cHjGpnmvXTxYvo4cPgBqGS6rQWEwD0xr3EqE5lmq9xU0pm9+W0J+fw0MXCFCvql89gK7hFqOvy3cVqi/c9KVX5yOSBb2LtGOBKCLF+8MV3V8gjIj28CkkXbUMr65RkEJqrlM3T6A0u9eAOaRQik0CmFVuiWhhbc7Y5wF/PjVv2CW0P55eM9cifgYHGL1UyLg+KMp8LhzvxXwIBCjcNSwjRs996TXvG1yNxcKGFfn2G2nOi2/GJzaXLvuPoZ6zY6VMJr5KqYj5TktlrX0o/hcnXc2JV+eeqwbG7gwJvb15cNAHE4YkYo03cz81N2hR+B/GORAnb+wIDAQAB",
   "version": "1.0",
   "description": "Keep your digital pet healthy by staying focused and limiting screen time on distracting sites.",
   "permissions": [
