@@ -52,10 +52,10 @@ function updateDisplay() {
   const mins = Math.floor((timeRemaining % 3600) / 60);
   const secs = timeRemaining % 60;
   if (hours > 0) {
-    timerDisplay.textContent = 
+    timerDisplay.textContent =
       `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   } else {
-    timerDisplay.textContent = 
+    timerDisplay.textContent =
       `${mins}:${secs.toString().padStart(2, '0')}`;
   }
 }
@@ -80,7 +80,7 @@ timerDisplay.addEventListener('click', () => {
   input.type = 'text'; // Use text to control formatting
   input.value = '000000'; // Initial internal state
   input.classList.add('timer-input');
-  
+
   // Create a visual display wrapper for the input
   timerDisplay.innerHTML = '';
   timerDisplay.appendChild(input);
@@ -105,7 +105,7 @@ timerDisplay.addEventListener('click', () => {
       const h = parseInt(raw.slice(0, 2)) || 0;
       const m = parseInt(raw.slice(2, 4)) || 0;
       const s = parseInt(raw.slice(4, 6)) || 0;
-      
+
       const newTotal = (h * 3600) + (m * 60) + s;
 
       if (newTotal > 0) {
@@ -151,6 +151,7 @@ const signOutBtn = document.getElementById('signOutBtn');
 const signedInDiv = document.getElementById('signedIn');
 const signedOutDiv = document.getElementById('signedOut');
 const userName = document.getElementById('userName');
+const errorMsg = document.getElementById('error-msg');
 
 // Open extension options from popup
 const optionsBtn = document.getElementById('optionsBtn');
@@ -169,9 +170,11 @@ if (optionsBtn) {
 signInBtn.addEventListener('click', () => {
   chrome.identity.getAuthToken({ interactive: true }, async (token) => {
     if (chrome.runtime.lastError) {
-      console.error(chrome.runtime.lastError);
+      errorMsg.textContent = `Sign in failed: ${chrome.runtime.lastError.message}`;
+      errorMsg.style.display = 'block';
       return;
     }
+    errorMsg.style.display = 'none'; // clear any previous error
 
     const response = await fetch("https://www.googleapis.com/oauth2/v1/userinfo", {
       headers: { Authorization: `Bearer ${token}` }
