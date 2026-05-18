@@ -167,14 +167,26 @@ if (optionsBtn) {
   });
 }
 
-signInBtn.addEventListener('click', () => {
-  chrome.identity.getAuthToken({ interactive: true }, async (token) => {
-    if (chrome.runtime.lastError) {
-      errorMsg.textContent = `Sign in failed: ${chrome.runtime.lastError.message}`;
-      errorMsg.style.display = 'block';
-      return;
+async function getAuthToken(retries = 10) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const token = await new Promise((resolve, reject) => {
+        chrome.identity.getAuthToken({ interactive: true }, (token) => {
+          if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+          else resolve(token);
+        });
+      });
+      return token;
+    } catch (err) {
+      if (i === retries - 1) throw err; // last attempt, give up
+      await new Promise(r => setTimeout(r, 500)); // wait 500ms before retry
     }
-    errorMsg.style.display = 'none'; // clear any previous error
+  }
+}
+
+signInBtn.addEventListener('click', async () => {
+  try {
+    const token = await getAuthToken();
 
     const response = await fetch("https://www.googleapis.com/oauth2/v1/userinfo", {
       headers: { Authorization: `Bearer ${token}` }
@@ -187,8 +199,13 @@ signInBtn.addEventListener('click', () => {
 
     // Store user info for later use
     chrome.storage.local.set({ user });
-  });
+  }
+  catch (err) {
+    errorMsg.textContent = `Sign in failed: ${err.message}`;
+    errorMsg.style.display = 'block';
+  }
 });
+
 
 signOutBtn.addEventListener('click', () => {
   chrome.identity.getAuthToken({ interactive: false }, (token) => {
