@@ -152,6 +152,20 @@ const signedInDiv = document.getElementById('signedIn');
 const signedOutDiv = document.getElementById('signedOut');
 const userName = document.getElementById('userName');
 
+// Open extension options from popup
+const optionsBtn = document.getElementById('optionsBtn');
+if (optionsBtn) {
+  optionsBtn.addEventListener('click', () => {
+    // Preferred API
+    if (chrome.runtime && chrome.runtime.openOptionsPage) {
+      chrome.runtime.openOptionsPage();
+    } else if (chrome.runtime && chrome.runtime.getURL) {
+      // Fallback
+      window.open(chrome.runtime.getURL('options.html'));
+    }
+  });
+}
+
 signInBtn.addEventListener('click', () => {
   chrome.identity.getAuthToken({ interactive: true }, async (token) => {
     if (chrome.runtime.lastError) {
