@@ -32,11 +32,27 @@ const DEFAULT_STATE = {
   lastActive: Date.now()
 };
 
+const DEFAULT_GACHA_STATE = {
+  collection: {},
+  rarePity: 0,
+  legendaryPity: 0,
+  lastRarePulled: 0,
+  lastLegendaryPulled: 0
+};
+
 // Initialize storage
 chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.local.get(null, (result) => {
     if (Object.keys(result).length === 0) {
       chrome.storage.local.set(DEFAULT_STATE);
+      chrome.storage.local.set({ gachaState: DEFAULT_GACHA_STATE });
+    } else {
+      // Ensure gachaState exists
+      chrome.storage.local.get('gachaState', (data) => {
+        if (!data.gachaState) {
+          chrome.storage.local.set({ gachaState: DEFAULT_GACHA_STATE });
+        }
+      });
     }
   });
 });

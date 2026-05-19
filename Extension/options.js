@@ -16,10 +16,11 @@ const statHours     = document.getElementById('statHours');
 const statLongestStudy = document.getElementById('statLongestStudy');
 const blockedList   = document.getElementById('blockedList');
 const toggleAddForm = document.getElementById('toggleAddForm');
-const addSiteForm   = document.getElementById('addSiteForm');
-const newSiteInput  = document.getElementById('newSiteInput');
-const confirmAdd    = document.getElementById('confirmAdd');
-const reviveBtn     = document.getElementById('reviveBtn');
+const addSiteForm = document.getElementById('addSiteForm');
+const newSiteInput = document.getElementById('newSiteInput');
+const confirmAdd = document.getElementById('confirmAdd');
+const reviveBtn = document.getElementById('reviveBtn');
+const gachaBtn = document.getElementById('gachaBtn');
 
 // ── Boot ───────────────────────────────────────────────────────────────────
 loadState();
@@ -223,3 +224,10 @@ chrome.storage.onChanged.addListener((changes, area) => {
     loadState();
   }
 });
+
+// ── Gacha Navigation ────────────────────────────────────────────────────────
+if (gachaBtn) {
+  gachaBtn.addEventListener('click', () => {
+    window.location.href = 'gacha.html';
+  });
+}
