@@ -193,7 +193,6 @@ if (optionsBtn) {
 }
 
 async function getAuthToken(retries = 10) {
-  console.log("enetered getauthtoken");
   for (let i = 0; i < retries; i++) {
     try {
       const token = await new Promise((resolve, reject) => {
@@ -202,7 +201,6 @@ async function getAuthToken(retries = 10) {
           else resolve(token);
         });
       });
-      console.log("exiting getauthtoken");
       return token;
     } catch (err) {
       if (i === retries - 1) throw err; // last attempt, give up
@@ -212,16 +210,13 @@ async function getAuthToken(retries = 10) {
 }
 
 signInBtn.addEventListener('click', async () => {
-  console.log("entered signin");
   try {
     const token = await getAuthToken();
-    console.log("got token");
     const response = await fetch("https://www.googleapis.com/oauth2/v1/userinfo", {
       headers: { Authorization: `Bearer ${token}` }
     });
 
     const user = await response.json();
-    console.log("response received");
     chrome.storage.local.set({ user, token });
     userName.textContent = `Signed in as ${user.name}`;
     signedOutDiv.style.display = 'none';
