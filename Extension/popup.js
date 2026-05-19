@@ -14,7 +14,7 @@ function loadState() {
   chrome.runtime.sendMessage({ action: 'getState' }, (result) => {
     state = result;
     updateButtonStates();
-    
+
     if (state.session.isActive) {
       clearInterval(countdownInterval);
       countdownInterval = setInterval(updateDisplay, 1000);
@@ -28,8 +28,8 @@ function loadState() {
 
 startBtn.addEventListener('click', () => {
   if (!state || state.session.isActive) return;
-  const durationMins = customDuration ? Math.round(customDuration / 60) : (state.timers.work || 25);
-  chrome.runtime.sendMessage({ action: 'startTimer', type: 'work', duration: durationMins }, () => {
+  const durationSecs = customDuration || ((state.timers.work || 25) * 60);
+  chrome.runtime.sendMessage({ action: 'startTimer', type: 'work', duration: durationSecs / 60 }, () => {
     loadState();
   });
 });
@@ -49,14 +49,13 @@ pauseBtn.addEventListener('click', () => {
 
 resetBtn.addEventListener('click', () => {
   chrome.runtime.sendMessage({ action: 'stopTimer' }, () => {
-    customDuration = null;
     loadState();
   });
 });
 
 function updateDisplay() {
   if (!state) return;
-  
+
   let secs = 0;
   if (state.session.isActive) {
     secs = Math.max(0, Math.floor((state.session.endTime - Date.now()) / 1000));
@@ -69,7 +68,7 @@ function updateDisplay() {
   const hours = Math.floor(secs / 3600);
   const mins = Math.floor((secs % 3600) / 60);
   const s = secs % 60;
-  
+
   if (hours > 0) {
     timerDisplay.textContent = `${hours}:${mins.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   } else {
@@ -79,7 +78,7 @@ function updateDisplay() {
 
 function updateButtonStates() {
   if (!state) return;
-  
+
   // Start button enabled if totally idle (not active, not paused)
   startBtn.disabled = state.session.isActive || !!state.session.pausedRemaining;
 
@@ -99,69 +98,67 @@ function updateButtonStates() {
 // Initial fetch
 loadState();
 
+// Restore custom timer duration
+chrome.storage.local.get('customDuration', (data) => {
+  if (data.customDuration) {
+    customDuration = data.customDuration;
+    updateDisplay();
+  }
+});
+
 timerDisplay.addEventListener('click', () => {
-  // Don't edit if timer is running
-  if (isEditing || timerInterval !== null) return;
+  if (isEditing || !state || state.session.isActive || state.session.pausedRemaining) return;
+
   isEditing = true;
 
   const input = document.createElement('input');
-  input.type = 'text'; // Use text to control formatting
-  input.value = '000000'; // Initial internal state
+  input.type = 'text';
   input.classList.add('timer-input');
 
-  // Create a visual display wrapper for the input
+  const formatInput = (val) => {
+    const padded = val.padStart(6, '0').slice(-6);
+    return `${padded.slice(0, 2)}:${padded.slice(2, 4)}:${padded.slice(4, 6)}`;
+  };
+
+  // digits starts empty — first keypress begins a fresh entry
+  let digits = '';
+  input.value = formatInput(digits); // shows 00:00:00 as placeholder
+
   timerDisplay.innerHTML = '';
   timerDisplay.appendChild(input);
   input.focus();
 
-  // Function to format the string 000530 into 00:05:30
-  const formatInput = (val) => {
-    const padded = val.padStart(6, '0').slice(-6);
-    const h = padded.slice(0, 2);
-    const m = padded.slice(2, 4);
-    const s = padded.slice(4, 6);
-    return `${h}:${m}:${s}`;
-  };
-
-  // Set initial visual
-  input.value = formatInput('');
-
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
-      // Logic to convert HHMMSS to total seconds
-      const raw = input.value.replace(/:/g, '');
-      const h = parseInt(raw.slice(0, 2)) || 0;
-      const m = parseInt(raw.slice(2, 4)) || 0;
-      const s = parseInt(raw.slice(4, 6)) || 0;
-
+      const padded = digits.padStart(6, '0').slice(-6);
+      const h = parseInt(padded.slice(0, 2)) || 0;
+      const m = parseInt(padded.slice(2, 4)) || 0;
+      const s = parseInt(padded.slice(4, 6)) || 0;
       const newTotal = (h * 3600) + (m * 60) + s;
 
       if (newTotal > 0) {
         customDuration = newTotal;
-        updateDisplay();
+        chrome.storage.local.set({ customDuration: newTotal });
       }
       revert();
     } else if (e.key === 'Escape') {
       revert();
     } else if (e.key === 'Backspace') {
       e.preventDefault();
-      const currentDigits = input.value.replace(/:/g, '');
-      const newDigits = currentDigits.slice(0, -1);
-      input.value = formatInput(newDigits);
+      digits = digits.slice(0, -1);
+      input.value = formatInput(digits);
     } else if (/^\d$/.test(e.key)) {
       e.preventDefault();
-      const currentDigits = input.value.replace(/:/g, '').replace(/^0+/, '');
-      if (currentDigits.length < 6) {
-        input.value = formatInput(currentDigits + e.key);
+      if (digits.length < 6) {
+        digits += e.key;
       }
+      input.value = formatInput(digits);
     } else if (e.key.length === 1) {
-      // Prevent non-numeric characters
       e.preventDefault();
     }
   });
 
   input.addEventListener('blur', () => {
-    // Small timeout to allow Enter key logic to finish if blurred by Enter
     setTimeout(revert, 100);
   });
 
@@ -170,6 +167,7 @@ timerDisplay.addEventListener('click', () => {
     updateDisplay();
   }
 });
+
 
 const signInBtn = document.getElementById('signInBtn');
 const signOutBtn = document.getElementById('signOutBtn');
@@ -192,39 +190,59 @@ if (optionsBtn) {
   });
 }
 
-signInBtn.addEventListener('click', () => {
-  chrome.identity.getAuthToken({ interactive: true }, async (token) => {
-    if (chrome.runtime.lastError) {
-      errorMsg.textContent = `Sign in failed: ${chrome.runtime.lastError.message}`;
-      errorMsg.style.display = 'block';
-      return;
+async function getAuthToken(retries = 10) {
+  console.log("enetered getauthtoken");
+  for (let i = 0; i < retries; i++) {
+    try {
+      const token = await new Promise((resolve, reject) => {
+        chrome.identity.getAuthToken({ interactive: true }, (token) => {
+          if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+          else resolve(token);
+        });
+      });
+      console.log("exiting getauthtoken");
+      return token;
+    } catch (err) {
+      if (i === retries - 1) throw err; // last attempt, give up
+      await new Promise(r => setTimeout(r, 500)); // wait 500ms before retry
     }
-    errorMsg.style.display = 'none'; // clear any previous error
+  }
+}
 
+signInBtn.addEventListener('click', async () => {
+  console.log("entered signin");
+  try {
+    const token = await getAuthToken();
+    console.log("got token");
     const response = await fetch("https://www.googleapis.com/oauth2/v1/userinfo", {
       headers: { Authorization: `Bearer ${token}` }
     });
 
     const user = await response.json();
+    console.log("response received");
+    chrome.storage.local.set({ user, token });
     userName.textContent = `Signed in as ${user.name}`;
     signedOutDiv.style.display = 'none';
     signedInDiv.style.display = 'block';
 
-    // Store user info for later use
-    chrome.storage.local.set({ user });
-  });
+  }
+  catch (err) {
+    errorMsg.textContent = `Sign in failed: ${err.message}`;
+    errorMsg.style.display = 'block';
+  }
 });
 
-signOutBtn.addEventListener('click', () => {
-  chrome.identity.getAuthToken({ interactive: false }, (token) => {
-    if (token) {
-      chrome.identity.removeCachedAuthToken({ token }, () => {
-        chrome.storage.local.remove('user');
-        signedInDiv.style.display = 'none';
-        signedOutDiv.style.display = 'block';
-      });
-    }
-  });
+
+signOutBtn.addEventListener('click', async () => {
+  const { token } = await chrome.storage.local.get("token");
+  if (token) {
+    await fetch(`https://accounts.google.com/o/oauth2/revoke?token=${token}`);
+    await new Promise(r => chrome.identity.removeCachedAuthToken({ token }, r));
+    await new Promise(r => chrome.identity.clearAllCachedAuthTokens(r));
+  }
+  await chrome.storage.local.remove(["user", "token"]);
+  signedInDiv.style.display = 'none';
+  signedOutDiv.style.display = 'block';
 });
 
 // Check if already signed in on load
@@ -242,7 +260,7 @@ function updatePetUI(pet) {
   const health = Math.floor(pet.health);
   const healthText = document.getElementById('healthText');
   const healthBarFill = document.getElementById('healthBarFill');
-  
+
   if (healthText) healthText.textContent = `${health}/100`;
   if (healthBarFill) {
     healthBarFill.style.width = `${health}%`;

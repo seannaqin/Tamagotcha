@@ -1,20 +1,21 @@
 let state = null;
 let countdownInterval = null;
+let customDuration = null;
 
-const timerDisplay  = document.getElementById('timerDisplay');
-const sessionLabel  = document.getElementById('sessionLabel');
-const nextInfo      = document.getElementById('nextInfo');
-const pauseBtn      = document.getElementById('pauseBtn');
-const resetBtn      = document.getElementById('resetBtn');
-const petImage      = document.getElementById('petImage');
-const healthBar     = document.getElementById('healthBar');
-const healthPct     = document.getElementById('healthPct');
-const statAge       = document.getElementById('statAge');
-const statDeceased  = document.getElementById('statDeceased');
-const statLongest   = document.getElementById('statLongest');
-const statHours     = document.getElementById('statHours');
+const timerDisplay = document.getElementById('timerDisplay');
+const sessionLabel = document.getElementById('sessionLabel');
+const nextInfo = document.getElementById('nextInfo');
+const pauseBtn = document.getElementById('pauseBtn');
+const resetBtn = document.getElementById('resetBtn');
+const petImage = document.getElementById('petImage');
+const healthBar = document.getElementById('healthBar');
+const healthPct = document.getElementById('healthPct');
+const statAge = document.getElementById('statAge');
+const statDeceased = document.getElementById('statDeceased');
+const statLongest = document.getElementById('statLongest');
+const statHours = document.getElementById('statHours');
 const statLongestStudy = document.getElementById('statLongestStudy');
-const blockedList   = document.getElementById('blockedList');
+const blockedList = document.getElementById('blockedList');
 const toggleAddForm = document.getElementById('toggleAddForm');
 const addSiteForm = document.getElementById('addSiteForm');
 const newSiteInput = document.getElementById('newSiteInput');
@@ -28,8 +29,12 @@ loadState();
 function loadState() {
   chrome.runtime.sendMessage({ action: 'getState' }, (result) => {
     state = result;
-    renderAll();
-    tickCountdown();
+    chrome.storage.local.get('customDuration', (data) => {
+      customDuration = data.customDuration || null;
+
+      renderAll();
+      tickCountdown();
+    });
   });
 }
 
@@ -44,10 +49,10 @@ function renderAll() {
 function renderStats() {
   const { pet, stats } = state;
   const ageDays = Math.floor((Date.now() - pet.birthDate) / 86400000);
-  statAge.textContent       = `${ageDays} day${ageDays !== 1 ? 's' : ''}`;
-  statDeceased.textContent  = stats.petsKilled;
-  statLongest.textContent   = `${stats.longestLifespan} days`;
-  statHours.textContent     = Math.floor(stats.hoursStudied);
+  statAge.textContent = `${ageDays} day${ageDays !== 1 ? 's' : ''}`;
+  statDeceased.textContent = stats.petsKilled;
+  statLongest.textContent = `${stats.longestLifespan} days`;
+  statHours.textContent = Math.floor(stats.hoursStudied);
 
   const longestMins = stats.longestSessionMins || 0;
   statLongestStudy.textContent = formatTime(longestMins * 60);
@@ -93,7 +98,7 @@ function renderTimerPanel() {
     pauseBtn.classList.remove('running');
     pauseBtn.disabled = false;
     pauseBtn.textContent = '▶';
-    timerDisplay.textContent = formatTime((timers.work || 25) * 60);
+    timerDisplay.textContent = formatTime(customDuration || ((timers.work || 25) * 60));
   }
 }
 
@@ -152,7 +157,9 @@ pauseBtn.addEventListener('click', () => {
       loadState();
     });
   } else {
-    const duration = state.timers.work || 25;
+    const duration = customDuration
+      ? customDuration
+      : ((state.timers.work || 25) *60);
     chrome.runtime.sendMessage({ action: 'startTimer', type: 'work', duration }, () => {
       loadState();
     });
@@ -162,7 +169,6 @@ pauseBtn.addEventListener('click', () => {
 resetBtn.addEventListener('click', () => {
   if (state.session.isActive) {
     chrome.runtime.sendMessage({ action: 'stopTimer' }, () => {
-      clearInterval(countdownInterval);
       loadState();
     });
   } else {
@@ -220,7 +226,7 @@ function removeSite(index) {
 
 // ── Storage Listener ───────────────────────────────────────────────────────
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && (changes.session || changes.pet || changes.stats)) {
+  if (area === 'local' && (changes.session || changes.pet || changes.stats || changes.customDuration)) {
     loadState();
   }
 });
