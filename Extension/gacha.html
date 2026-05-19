@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Gacha System - Screen Time Tamagotcha</title>
+  <link rel="stylesheet" href="gacha.css">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header with back button -->
+  <div class="header">
+    <button id="backBtn" class="back-btn">← Back</button>
+    <h1>Pet Gacha System</h1>
+  </div>
+
+  <div class="container">
+    <!-- Left Panel: Collection -->
+    <div class="panel collection-panel">
+      <h2>Collection</h2>
+      <div id="collectionStats">
+        <p>Total Pets: <span id="totalPets">0</span></p>
+        <p>Unique Pets: <span id="uniquePets">0</span></p>
+      </div>
+      <div id="collectionGrid" class="collection-grid"></div>
+      <button id="dropAllBtn" class="drop-all-btn">Drop All Pets</button>
+    </div>
+
+    <!-- Center Panel: Gacha Mechanics -->
+    <div class="panel gacha-panel">
+      <div class="gacha-header">
+        <h2>Summon Pets</h2>
+        <p class="gacha-subtitle">Earn guaranteed happy pets while studying!</p>
+      </div>
+
+      <!-- Pull Options -->
+      <div class="pull-options">
+        <button id="singlePullBtn" class="pull-btn single-pull">
+          <div class="pull-cost"> 1 Pull</div>
+          <div class="pull-desc">Single Pull</div>
+        </button>
+        <button id="tenPullBtn" class="pull-btn ten-pull">
+          <div class="pull-cost"> 10 Pulls</div>
+          <div class="pull-desc">10-Pull Discount</div>
+        </button>
+      </div>
+
+      <!-- Pity System Info -->
+      <div class="pity-info">
+        <h3>Pity System</h3>
+        <p class="pity-description">Guaranteed pulls ensure you'll get rarer pets after a certain number of pulls. Every 10 pulls guarantees a 4-star, and every 20 pulls guarantees a 5-star!</p>
+        <div class="pity-tracker">
+          <p>4-Star Pity: <span id="rarePity">0</span>/10</p>
+          <div class="pity-bar rare-bar">
+            <div id="rarePityBar" class="pity-fill"></div>
+          </div>
+        </div>
+        <div class="pity-tracker">
+          <p>5-Star Pity: <span id="legendaryPity">0</span>/20</p>
+          <div class="pity-bar legendary-bar">
+            <div id="legendaryPityBar" class="pity-fill"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gacha Results Modal -->
+      <div id="resultsModal" class="modal hidden">
+        <div class="modal-content">
+          <div id="resultsContainer" class="results-container"></div>
+          <button id="closeResultsBtn" class="confirm-btn">Collect</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Rates & Info -->
+    <div class="panel info-panel">
+      <h2>Drop Rates</h2>
+      <div class="rates-section">
+        <div class="rate-item">
+          <div class="rate-header">
+            <span>5-Star Rate</span>
+            <span class="rate-value">3%</span>
+          </div>
+          <div class="rate-bar">
+            <div class="rate-bar-fill five-star" style="width: 3%"></div>
+          </div>
+        </div>
+        <div class="rate-item">
+          <div class="rate-header">
+            <span>4-Star Rate</span>
+            <span class="rate-value">20%</span>
+          </div>
+          <div class="rate-bar">
+            <div class="rate-bar-fill four-star" style="width: 20%"></div>
+          </div>
+        </div>
+        <div class="rate-item">
+          <div class="rate-header">
+            <span>3-Star Rate</span>
+            <span class="rate-value">77%</span>
+          </div>
+          <div class="rate-bar">
+            <div class="rate-bar-fill three-star" style="width: 77%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <h3>Available Pets</h3>
+        <ul class="pet-list">
+          <li><span class="star">★★★★★</span> Dragon</li>
+          <li><span class="star">★★★★</span> Fox</li>
+          <li><span class="star">★★★★</span> Penguin</li>
+          <li><span class="star">★★★</span> Mushroom</li>
+          <li><span class="star">★★★</span> Slime</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="gacha.js"></script>
+</body>
+</html>

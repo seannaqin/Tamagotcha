@@ -21,6 +21,7 @@ const addSiteForm = document.getElementById('addSiteForm');
 const newSiteInput = document.getElementById('newSiteInput');
 const confirmAdd = document.getElementById('confirmAdd');
 const reviveBtn = document.getElementById('reviveBtn');
+const gachaBtn = document.getElementById('gachaBtn');
 
 // ── Boot ───────────────────────────────────────────────────────────────────
 loadState();
@@ -229,3 +230,10 @@ chrome.storage.onChanged.addListener((changes, area) => {
     loadState();
   }
 });
+
+// ── Gacha Navigation ────────────────────────────────────────────────────────
+if (gachaBtn) {
+  gachaBtn.addEventListener('click', () => {
+    window.location.href = 'gacha.html';
+  });
+}
