@@ -1,11 +1,11 @@
 // Gacha System Configuration
 const GACHA_CONFIG = {
   pets: [
-    { name: 'Dragon', rarity: 5, chance: 0.03, imageFile: 'dragon_happy_1779142350666.png' },
-    { name: 'Fox', rarity: 4, chance: 0.10, imageFile: 'fox_happy_1779142241397.png' },
-    { name: 'Penguin', rarity: 4, chance: 0.10, imageFile: 'penguin_happy_1779142287572.png' },
-    { name: 'Mushroom', rarity: 3, chance: 0.385, imageFile: 'mushroom_happy_1779142184188.png' },
-    { name: 'Slime', rarity: 3, chance: 0.385, imageFile: 'slime_happy_1779142134892.png' }
+    { name: 'Dragon', rarity: 5, chance: 0.03, imageFile: 'dragon_happy.png' },
+    { name: 'Fox', rarity: 4, chance: 0.10, imageFile: 'fox_happy.png' },
+    { name: 'Penguin', rarity: 4, chance: 0.10, imageFile: 'penguin_happy.png' },
+    { name: 'Mushroom', rarity: 3, chance: 0.385, imageFile: 'mushroom_happy.png' },
+    { name: 'Slime', rarity: 3, chance: 0.385, imageFile: 'slime_happy.png' }
   ],
   pity: {
     rare: 10,  // 4-star pity
