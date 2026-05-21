@@ -67,6 +67,12 @@ function renderPet() {
   if (pet.status === 'dead') {
     petImage.src = 'assets/pet_dead.png';
     if (reviveBtn) reviveBtn.style.display = 'block';
+    // Pause the timer if it's running
+    if (state.session.isActive) {
+      chrome.runtime.sendMessage({ action: 'pauseTimer' }, () => {
+        loadState();
+      });
+    }
   } else if (pet.status === 'sad') {
     petImage.src = 'assets/pet_sad.png';
     if (reviveBtn) reviveBtn.style.display = 'none';
