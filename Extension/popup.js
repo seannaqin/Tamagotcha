@@ -1,6 +1,6 @@
 let state = null;
 let countdownInterval = null;
-let maxTimerInput = 1440; // 1 day in minutes
+let maxTimerInput = 86400; // 1 day in seconds
 let isEditing = false;
 let customDuration = null; // User edited duration in seconds
 
@@ -82,10 +82,10 @@ function updateButtonStates() {
 
   if (state.session.isActive) {
     pauseBtn.disabled = false;
-    pauseBtn.textContent = 'Pause';
+    pauseBtn.textContent = '⏸';
   } else {
     pauseBtn.disabled = false;
-    pauseBtn.textContent = 'Start';
+    pauseBtn.textContent = '▶';
   }
 }
 
@@ -104,6 +104,8 @@ timerDisplay.addEventListener('click', () => {
   if (isEditing || !state || state.session.isActive || state.session.pausedRemaining) return;
 
   isEditing = true;
+  document.getElementById('pauseBtn').style.display = 'none';
+  document.getElementById('resetBtn').style.display = 'none';
 
   const input = document.createElement('input');
   input.type = 'text';
@@ -128,7 +130,7 @@ timerDisplay.addEventListener('click', () => {
       const h = parseInt(padded.slice(0, 2)) || 0;
       const m = parseInt(padded.slice(2, 4)) || 0;
       const s = parseInt(padded.slice(4, 6)) || 0;
-      const newTotal = (h * 3600) + (m * 60) + s;
+      const newTotal = Math.min((h * 3600) + (m * 60) + s, maxTimerInput);
 
       if (newTotal > 0) {
         customDuration = newTotal;
@@ -158,6 +160,8 @@ timerDisplay.addEventListener('click', () => {
 
   function revert() {
     isEditing = false;
+    document.getElementById('pauseBtn').style.display = '';
+    document.getElementById('resetBtn').style.display = '';
     updateDisplay();
   }
 });
