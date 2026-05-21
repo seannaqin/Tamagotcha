@@ -213,7 +213,7 @@ body {
 }
 
 .pull-btn {
-  background: linear-gradient(135deg, #d4af37 0%, #c99c2a 100%);
+  background: linear-gradient(135deg, #FDE0BC 0%, rgb(246, 199, 143) 100%);
   border: none;
   border-radius: 12px;
   padding: 20px;
