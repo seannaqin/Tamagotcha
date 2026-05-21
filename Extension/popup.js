@@ -14,6 +14,10 @@ function loadState() {
     state = result;
     updateButtonStates();
 
+    chrome.storage.local.get('pet', (data) => {
+      if (data.pet) updatePetUI(data.pet);
+    });
+
     if (state.session.isActive) {
       clearInterval(countdownInterval);
       countdownInterval = setInterval(updateDisplay, 1000);
@@ -246,7 +250,6 @@ function updatePetUI(pet) {
   const healthText = document.getElementById('healthText');
   const healthBarFill = document.getElementById('healthBarFill');
 
-  if (healthText) healthText.textContent = `${health}/100`;
   if (healthBarFill) {
     healthBarFill.style.width = `${health}%`;
     healthBarFill.classList.remove('high', 'medium', 'low');
@@ -266,7 +269,7 @@ function updatePetUI(pet) {
     petImage.src = 'assets/pet_sad.png';
     if (reviveBtn) reviveBtn.style.display = 'none';
   } else {
-    petImage.src = 'assets/happy_pet.jpg';
+    petImage.src = 'assets/icon.png';
     if (reviveBtn) reviveBtn.style.display = 'none';
   }
 }

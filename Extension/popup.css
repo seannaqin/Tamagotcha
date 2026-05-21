@@ -49,6 +49,33 @@
   letter-spacing: 2px;
 }
 
+.health-bar-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0px;
+  margin: 5px auto 7px;
+  width: 120px;
+}
+
+.health-bar-track {
+  flex: 1;
+  height: 10px;
+  background: #FDE0BC;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.health-bar-fill {
+  width: 100%;
+  min-width: 4px;
+  height: 100%;
+  background: #419741;
+  border-radius: 999px;
+  transition: width 0.2s ease;
+  transform-origin: left center;
+}
+
 .controls {
   display: flex;
   gap: 10px;
