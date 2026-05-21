@@ -269,7 +269,7 @@ function updatePetUI(pet) {
     petImage.src = 'assets/pet_sad.png';
     if (reviveBtn) reviveBtn.style.display = 'none';
   } else {
-    petImage.src = 'assets/icon.png';
+    petImage.src = 'assets/happy_pet.jpg';
     if (reviveBtn) reviveBtn.style.display = 'none';
   }
 }
