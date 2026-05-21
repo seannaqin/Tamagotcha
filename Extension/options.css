@@ -157,6 +157,14 @@ body {
   justify-content: center;
 }
 
+#resetBtn {
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+  font-weight: 800;
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
 .icon-btn:hover:not(:disabled) {
   background: #f5cfa0;
 }

@@ -4,7 +4,6 @@ let maxTimerInput = 1440; // 1 day in minutes
 let isEditing = false;
 let customDuration = null; // User edited duration in seconds
 
-const startBtn = document.getElementById('startBtn');
 const pauseBtn = document.getElementById('pauseBtn');
 const resetBtn = document.getElementById('resetBtn');
 const timerDisplay = document.getElementById('timerDisplay');
@@ -26,22 +25,20 @@ function loadState() {
   });
 }
 
-startBtn.addEventListener('click', () => {
-  if (!state || state.session.isActive) return;
-  const durationSecs = customDuration || ((state.timers.work || 25) * 60);
-  chrome.runtime.sendMessage({ action: 'startTimer', type: 'work', duration: durationSecs / 60 }, () => {
-    loadState();
-  });
-});
-
 pauseBtn.addEventListener('click', () => {
-  if (state && state.session.isActive) {
+  if (!state) return;
+
+  if (state.session.isActive) {
     chrome.runtime.sendMessage({ action: 'pauseTimer' }, () => {
       loadState();
     });
-  } else if (state && state.session.pausedRemaining) {
-    // Resume
+  } else if (state.session.pausedRemaining) {
     chrome.runtime.sendMessage({ action: 'resumeTimer' }, () => {
+      loadState();
+    });
+  } else {
+    const durationSecs = customDuration || ((state.timers.work || 25) * 60);
+    chrome.runtime.sendMessage({ action: 'startTimer', type: 'work', duration: durationSecs / 60 }, () => {
       loadState();
     });
   }
@@ -79,19 +76,12 @@ function updateDisplay() {
 function updateButtonStates() {
   if (!state) return;
 
-  // Start button enabled if totally idle (not active, not paused)
-  startBtn.disabled = state.session.isActive || !!state.session.pausedRemaining;
-
-  // Pause button says Pause if running, Resume if paused
   if (state.session.isActive) {
     pauseBtn.disabled = false;
     pauseBtn.textContent = 'Pause';
-  } else if (state.session.pausedRemaining) {
-    pauseBtn.disabled = false;
-    pauseBtn.textContent = 'Resume';
   } else {
-    pauseBtn.disabled = true;
-    pauseBtn.textContent = 'Pause';
+    pauseBtn.disabled = false;
+    pauseBtn.textContent = 'Start';
   }
 }
 

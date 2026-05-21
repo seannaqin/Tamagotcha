@@ -158,8 +158,8 @@ pauseBtn.addEventListener('click', () => {
     });
   } else {
     const duration = customDuration
-      ? customDuration
-      : ((state.timers.work || 25) *60);
+      ? customDuration / 60
+      : (state.timers.work || 25);
     chrome.runtime.sendMessage({ action: 'startTimer', type: 'work', duration }, () => {
       loadState();
     });
@@ -167,12 +167,15 @@ pauseBtn.addEventListener('click', () => {
 });
 
 resetBtn.addEventListener('click', () => {
-  if (state.session.isActive) {
+  if (state.session.isActive || state.session.pausedRemaining) {
     chrome.runtime.sendMessage({ action: 'stopTimer' }, () => {
       loadState();
     });
   } else {
-    loadState();
+    chrome.storage.local.get('customDuration', (data) => {
+      customDuration = data.customDuration || null;
+      renderTimerPanel();
+    });
   }
 });
 
